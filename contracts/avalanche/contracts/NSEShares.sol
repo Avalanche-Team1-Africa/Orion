@@ -10,6 +10,9 @@ contract NSEShares is ERC1155, Ownable {
 
     mapping(uint256 => string) public shareSymbols;
 
+    event SharePurchased(address indexed buyer, uint256 indexed tokenId, uint256 amount);
+
+
     constructor() ERC1155("https://yourdomain.com/api/shares/{id}.json") {
         string[58] memory symbols = [
             "SCOM", "EQTY", "EABL", "KCB", "SCBK", "ABSA", "COOP", "NCBA", "SBIC", "IMH",
@@ -23,7 +26,16 @@ contract NSEShares is ERC1155, Ownable {
         for (uint256 i = 0; i < TOTAL_SHARES; i++) {
             _mint(msg.sender, i, 1_000_000_000, "");
             shareSymbols[i] = symbols[i];
-        
         }
+    }
+
+    //buy function to transfer shares to buyer when payment is confirmed
+    function buyShare(uint256 tokenId, uint256 amount, address recipient) external onlyOwner {
+        require(tokenId < TOTAL_SHARES, "Invalid token ID");
+        require(balanceOf(msg.sender, tokenId) >= amount, "Not enough shares available");
+
+        safeTransferFrom(msg.sender, recipient, tokenId, amount, "");
+
+        emit SharePurchased(recipient, tokenId, amount);
     }
 }
