@@ -54,6 +54,8 @@ contract NSEShares is ERC1155, Ownable {
         emit SharePurchased(msg.sender, tokenId, amount); // Emit event for transparency
     }
 
-
-
+    //function to check how many shares of a specific nse stock a user owns
+    function checkShareBalance(address user, uint256 tokenId) external view returns (uint256) {
+        return balanceOf(user, tokenId);
+    }
 }
