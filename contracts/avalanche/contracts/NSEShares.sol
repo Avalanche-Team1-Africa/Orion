@@ -12,7 +12,6 @@ contract NSEShares is ERC1155, Ownable {
 
     event SharePurchased(address indexed buyer, uint256 indexed tokenId, uint256 amount);
 
-
     constructor() ERC1155("https://yourdomain.com/api/shares/{id}.json") {
         string[58] memory symbols = [
             "SCOM", "EQTY", "EABL", "KCB", "SCBK", "ABSA", "COOP", "NCBA", "SBIC", "IMH",
@@ -38,4 +37,23 @@ contract NSEShares is ERC1155, Ownable {
 
         emit SharePurchased(recipient, tokenId, amount);
     }
+
+    //function to sell shares back to the contract
+    function sellShares(uint256 tokenId, uint256 amount, uint256 pricePerShare) external {
+        require(balanceOf(msg.sender, tokenId) >= amount, "Not enough shares to sell");
+
+        uint256 totalPrice = pricePerShare * amount; // Calculate how much ETH to pay back
+        require(address(this).balance >= totalPrice, "Contract does not have enough ETH");
+
+        // Transfer shares from user to contract
+        safeTransferFrom(msg.sender, address(this), tokenId, amount, "");
+
+        // Send ETH to the user
+        payable(msg.sender).transfer(totalPrice);
+
+        emit SharePurchased(msg.sender, tokenId, amount); // Emit event for transparency
+    }
+
+
+
 }
