@@ -11,8 +11,11 @@ contract NSEShares is ERC1155, Ownable {
     mapping(uint256 => string) public shareSymbols;
 
     event SharePurchased(address indexed buyer, uint256 indexed tokenId, uint256 amount);
+    event ShareSold(address indexed seller, uint256 indexed tokenId, uint256 amount, uint256 totalPrice);
+    event Withdrawal(address indexed owner, uint256 amount);
 
-    constructor() ERC1155("https://yourdomain.com/api/shares/{id}.json") {
+
+    constructor() ERC1155("https://https://nse-seven.vercel.app/api/shares/{id}.json") Ownable(msg.sender) {
         string[58] memory symbols = [
             "SCOM", "EQTY", "EABL", "KCB", "SCBK", "ABSA", "COOP", "NCBA", "SBIC", "IMH",
             "BAT", "KEGN", "BKG", "KQ", "UMME", "DTK", "BAMB", "BRIT", "JUB", "TOTL",
@@ -42,20 +45,33 @@ contract NSEShares is ERC1155, Ownable {
     function sellShares(uint256 tokenId, uint256 amount, uint256 pricePerShare) external {
         require(balanceOf(msg.sender, tokenId) >= amount, "Not enough shares to sell");
 
-        uint256 totalPrice = pricePerShare * amount; // Calculate how much ETH to pay back
-        require(address(this).balance >= totalPrice, "Contract does not have enough ETH");
+        uint256 totalPrice = pricePerShare * amount; // Calculate how much AVAX to pay back
+        require(address(this).balance >= totalPrice, "Contract does not have enough AVAX");
 
         // Transfer shares from user to contract
         safeTransferFrom(msg.sender, address(this), tokenId, amount, "");
 
-        // Send ETH to the user
+        // Send AVAX to the user
         payable(msg.sender).transfer(totalPrice);
 
-        emit SharePurchased(msg.sender, tokenId, amount); // Emit event for transparency
+        emit ShareSold(msg.sender, tokenId, amount, totalPrice);
     }
 
     //function to check how many shares of a specific nse stock a user owns
     function checkShareBalance(address user, uint256 tokenId) external view returns (uint256) {
         return balanceOf(user, tokenId);
     }
+
+    // Only owner can withdraw AVAX accumulated in the contract
+    function withdraw(uint256 amount) external onlyOwner {
+        require(address(this).balance >= amount, "Not enough balance to withdraw");
+
+        // Send the specified amount of AVAX to the owner
+        payable(owner()).transfer(amount);
+        emit Withdrawal(owner(), amount);
+    }
+
+    receive() external payable {}
+    fallback() external payable {}
+
 }
