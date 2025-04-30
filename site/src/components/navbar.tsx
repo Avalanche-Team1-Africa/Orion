@@ -2,7 +2,6 @@
 import { WalletButton } from "@/components/wallet-button";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-// import { HashGraphWalletButton } from "./hashgraph-wallet-button";
 import { useRouter } from "next/navigation";
 export function Navbar() {
   const pathname = usePathname();
