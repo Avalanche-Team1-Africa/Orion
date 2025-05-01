@@ -2,13 +2,12 @@
 import React, { useState, useEffect } from "react";
 import getGraphData from "@/server-actions/dashboard/graph";
 import { sendNotification } from "@/server-actions/sell/notify";
-import { Loader2 } from "lucide-react";
 import { GraphDataMode } from "@/constants/types";
 import { Button } from "@/components/ui/button";
-import {
-  HWBridgeSigner,
-  HederaSignerType,
-} from "@buidlerlabs/hashgraph-react-wallets";
+// import {
+//   HWBridgeSigner,
+//   HederaSignerType,
+// } from "@buidlerlabs/hashgraph-react-wallets";
 import {
   Card,
   CardContent,
@@ -35,6 +34,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
+  Loader2,
   Wallet,
   BarChart3,
   DollarSign,
@@ -56,10 +56,14 @@ import {
   getTotalPortfolioValue,
   getInitialInvestment,
 } from "@/server-actions/stocks/dashboard";
-import { useAccountId, useWallet } from "@buidlerlabs/hashgraph-react-wallets";
-import { TransferTransaction } from "@hashgraph/sdk";
+// import { useAccountId, useWallet } from "@buidlerlabs/hashgraph-react-wallets";
+// import { TransferTransaction } from "@hashgraph/sdk";
 import { transferHbar } from "@/server-actions/contracts/transfer_hbar";
 import updateUserStockHoldings from "@/server-actions/stocks/update_stock_holdings";
+import { useAccount, useWriteContract, useConnectorClient } from "wagmi";
+import { CONTRACT_ABI, CONTRACT_ADDRESS } from "@/contract/abi/constants";
+import { parseEther } from "viem";
+
 interface StockHoldings {
   tokenId: string;
   symbol: string;
@@ -77,13 +81,16 @@ interface PerformanceData {
 }
 
 type DateRange = "1w" | "1m";
-function isHederaSigner(signer: HWBridgeSigner): signer is HederaSignerType {
-  // Check based on properties that are unique to HederaSignerType
-  return (signer as HederaSignerType).topic !== undefined;
-}
+// function isHederaSigner(signer: HWBridgeSigner): signer is HederaSignerType {
+//   // Check based on properties that are unique to HederaSignerType
+//   return (signer as HederaSignerType).topic !== undefined;
+// }
 const DashBoardPage = () => {
-  const { isConnected } = useWallet();
-  const { data: address } = useAccountId();
+  const { isConnected, address } = useAccount();
+  const { data: connectorClient } = useConnectorClient(); // for signing
+  const { writeContractAsync, isSuccess } = useWriteContract({});
+  //const { isConnected } = useWallet();
+  //const { data: address } = useAccountId();
   const [isSelling, setIsSelling] = useState(false);
   const [portfolio, setPortfolio] = useState<StockHoldings[]>([]);
   const [performanceData, setPerformanceData] = useState<PerformanceData[]>([]);
@@ -98,8 +105,8 @@ const DashBoardPage = () => {
   const [paymentMethod, setPaymentMethod] = useState("mobile");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [dateRange, setDateRange] = useState<DateRange>("1w");
-  const { signer } = useWallet();
-  const { data: accountId } = useAccountId();
+  // const { signer } = useWallet();
+  // const { data: accountId } = useAccountId();
 
   useEffect(() => {
     // Only proceed if wallet is connected and we have an address
@@ -193,7 +200,7 @@ const DashBoardPage = () => {
       const currentPricePerShare =
         selectedStock.current_price / selectedStock.shares;
       const saleAmount = currentPricePerShare * sellQuantity;
-      await sellToken(sellQuantity, selectedStock.tokenId);
+      await sellToken(sellQuantity, selectedStock.tokenId, currentPricePerShare.toString());
       // Send notification
       if (paymentMethod === "mobile") {
         console.log("Mobile payment selected");
@@ -202,13 +209,6 @@ const DashBoardPage = () => {
           amount: saleAmount,
         });
         console.log("Payment done");
-      } else {
-        console.log("HBAR option selected");
-        await transferHbar({
-          userAddress: address,
-          amount: saleAmount,
-        });
-        console.log("HBAR sent");
       }
       console.log("Beginning to update stock holdings");
       await updateUserStockHoldings({
@@ -246,31 +246,49 @@ const DashBoardPage = () => {
       setIsSelling(false);
     }
   };
-  const sellToken = async (amount: number, tokenId: string) => {
-    const object = {
-      tokenId: tokenId,
-      amount: amount,
-    };
-    if (!signer) {
+  const sellToken = async (amount: number, tokenId: string, pricePerShare: string) => {
+    // const object = {
+    //   tokenId: tokenId,
+    //   amount: amount,
+    // };
+    if (!isConnected) {
       toast.error("Wallet not connected");
       return;
     }
-    if (!accountId) {
+    if (!address) {
       toast.error("Account ID not found");
       return;
     }
-    if (!isHederaSigner(signer)) {
-      toast.error("Invalid signer");
-      return;
+
+    try{
+      await writeContractAsync({
+        abi: CONTRACT_ABI,
+        address: CONTRACT_ADDRESS,
+        functionName: "sellShares",
+        args: [ 
+          BigInt(tokenId),
+          BigInt(amount), 
+          parseEther(pricePerShare)
+        ],
+      });
+
+      toast.success("Sell transaction submitted");
+    } catch( err: any){
+      console.error("Error occured while selling tokens", err)
+      toast.error("Sell transaction failed")
     }
-    const transferTokenTx = new TransferTransaction()
-      .addTokenTransfer(object.tokenId, accountId, -amount) //Fill in the token ID
-      .addTokenTransfer(object.tokenId, "0.0.5785413", amount); //Fill in the token ID and receiver account
+    // if (!connectorClient) {
+    //   toast.error("Invalid signer");
+    //   return;
+    // }
+    // const transferTokenTx = new TransferTransaction()
+    //   .addTokenTransfer(object.tokenId, accountId, -amount) //Fill in the token ID
+    //   .addTokenTransfer(object.tokenId, "0.0.5785413", amount); //Fill in the token ID and receiver account
     
-    console.log("Signing transfer of coinst transaction");
-    const signedTx = await transferTokenTx.freezeWithSigner(signer);
-    await signedTx.executeWithSigner(signer);
-    console.log("Done signing");
+    // console.log("Signing transfer of coinst transaction");
+    // const signedTx = await transferTokenTx.freezeWithSigner(signer);
+    // await signedTx.executeWithSigner(signer);
+    // console.log("Done signing");
   };
 
   if (!isConnected) {
