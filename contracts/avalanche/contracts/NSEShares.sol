@@ -15,7 +15,7 @@ contract NSEShares is ERC1155, Ownable {
     event Withdrawal(address indexed owner, uint256 amount);
 
 
-    constructor() ERC1155("https://https://nse-seven.vercel.app/api/shares/{id}.json") Ownable(msg.sender) {
+    constructor() ERC1155("https://nse-seven.vercel.app/api/shares/{id}.json") Ownable(msg.sender) {
         string[58] memory symbols = [
             "SCOM", "EQTY", "EABL", "KCB", "SCBK", "ABSA", "COOP", "NCBA", "SBIC", "IMH",
             "BAT", "KEGN", "BKG", "KQ", "UMME", "DTK", "BAMB", "BRIT", "JUB", "TOTL",
