@@ -9,9 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@buidlerlabs/hashgraph-react-wallets": "^2.5.0",
     "@clerk/nextjs": "^6.12.6",
-    "@hashgraph/sdk": "^2.61.0",
     "@hookform/resolvers": "^4.1.3",
     "@next/env": "^15.2.2",
     "@paystack/inline-js": "^2.22.3",
