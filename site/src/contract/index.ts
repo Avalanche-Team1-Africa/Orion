@@ -2,6 +2,7 @@
 import { Errors, MyError } from "@/constants/errors";
 import "../../envConfig";
 import Web3 from "web3";
+import {CONTRACT_ABI, CONTRACT_ADDRESS} from "./abi/constants";
 
 import 'dotenv/config'
 interface CreateStockTokenArgs {
@@ -29,9 +30,11 @@ export class SmartContract {
 
         this.web3 = new Web3("https://rpc.ankr.com/avalanche_fuji");
         this.account = this.web3.eth.accounts.wallet.add(process.env.PRIVATEKEY);
-        this.avalancheContract = new this.web3.eth.Contract({}, "0x68C4A076Fd021B42b5c7527AeA11ba62a0f1E073");
+        this.avalancheContract = new this.web3.eth.Contract(CONTRACT_ABI, CONTRACT_ADDRESS);
     }
+
     async createStock(args: CreateStockTokenArgs): Promise<string> {
+        console.log(args); 
         // const client: Client = Client.forTestnet();
         try {
             //     // Your account ID and private key from string value
@@ -69,6 +72,7 @@ export class SmartContract {
     }
 
     async buyStock(args: BuyTokenArgs): Promise<string> {
+        console.log(args);
         try {
             const txReceipt = await this.avalancheContract.methods.buyShare(
 

@@ -1,10 +1,13 @@
 import { mintAsset } from "@/cardano/serializer";
 import { TokenSchema } from "@/types/token";
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const parsed = TokenSchema.safeParse(body);
-    if (!parsed.success) throw new Error("Invalid data");
+    if (!parsed.success) {
+      return Response.json({message: parsed.error.issues[0].message}, {status: 400});
+    }
     const { assetName, supply } = parsed.data;
     const tokenId = await mintAsset(assetName, supply);
     //linting fix
