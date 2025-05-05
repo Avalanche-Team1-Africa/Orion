@@ -15,17 +15,17 @@ const OWNER_KEY = process.env.OWNER_KEY!;
 if (!MINTER_SEED || !BLOCKFROST_APIKEY || !OWNER_KEY) {
   throw new Error("Missing environment variables");
 }
-const loadLucid = async (wallet: string, blockfrostApiKey: string) => {
-  try {
-    const network = blockfrostApiKey.substring(0, 7);
-    invariant(network);
-    const lucid = await Lucid.new(
-      new Blockfrost(
-        `https://cardano-preprod.blockfrost.io/api/v0`,
-        blockfrostApiKey,
-      ),
-      "Preprod",
-    );
+export const loadLucid = async (wallet: string, blockfrostApiKey: string) => {
+    try {
+        const network = blockfrostApiKey.substring(0, 7);
+        invariant(network);
+        const lucid = await Lucid.new(
+            new Blockfrost(
+                `https://cardano-preprod.blockfrost.io/api/v0`,
+                blockfrostApiKey
+            ),
+            "Preprod"
+        );
 
     if (wallet.includes(" ")) {
       lucid.selectWalletFromSeed(wallet);
@@ -83,32 +83,35 @@ export const mintAsset = async (assetName: string, amount: number) => {
       minter.wallet.address(),
     ]);
 
-    invariant(utxos.length, `${minterAddress} needs to be funded`);
-    invariant(ownerUtxos.length, `${address} needs to be funded`);
-    const ownerHash = getKeyHash(address);
-    const mintingPolicy = await loadMintingPolicy(ownerHash, minter);
-    const script = minter.utils.nativeScriptFromJson(mintingPolicy);
-    const policyId = minter.utils.mintingPolicyToId(script);
-    const fullAssetName = policyId + fromText(assetName);
-    const tx = await minter
-      .newTx()
-      .mintAssets({
-        [fullAssetName]: BigInt(amount),
-      })
-      .payToAddress(minterAddress, {
-        [fullAssetName]: BigInt(amount),
-        lovelace: BigInt(2000000),
-      })
-      .addSignerKey(ownerHash)
-      .attachMintingPolicy(script)
-      .complete();
-    const signedTx = await tx.signWithPrivateKey(OWNER_KEY).sign().complete();
+        invariant(utxos.length, `${minterAddress} needs to be funded`);
+        invariant(ownerUtxos.length, `${address} needs to be funded`);
+        const ownerHash = getKeyHash(address);
+        const mintingPolicy = await loadMintingPolicy(ownerHash, minter);
+        const script = minter.utils.nativeScriptFromJson(mintingPolicy);
+        const policyId = minter.utils.mintingPolicyToId(script);
+        const fullAssetName = policyId + fromText(assetName);
+        const tx = await minter
+            .newTx()
+            .mintAssets({
+                [fullAssetName]: BigInt(amount),
+            })
+            .payToAddress(minterAddress, {
+                [fullAssetName]: BigInt(amount), lovelace: BigInt(1000000)
+            })
+            .addSignerKey(ownerHash)
+            .attachMintingPolicy(script)
+            .complete()
+        const signedTx = await tx
+            .signWithPrivateKey(OWNER_KEY)
+            .sign()
+            .complete();
 
-    await signedTx.submit();
-    console.log("full asset name", fullAssetName);
-    return fullAssetName;
-  } catch (error) {
-    console.error("Error minting token:", error);
-    throw error;
-  }
-};
+        await signedTx.submit();
+        return fullAssetName;
+    }
+    catch (error) {
+        console.error("Error minting token:", error);
+        throw error;
+    }
+
+}
