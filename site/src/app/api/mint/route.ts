@@ -1,5 +1,5 @@
-import { mintAsset } from "@/app/cardano/serializer";
-import { TokenSchema } from "@/app/types/token";
+import { mintAsset } from "@/cardano/serializer";
+import { TokenSchema } from "@/types/token"
 export async function POST(request: Request) {
     try {
         const body = await request.json();
