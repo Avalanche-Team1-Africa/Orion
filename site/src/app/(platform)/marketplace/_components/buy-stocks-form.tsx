@@ -15,12 +15,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+
+import { useAppKitAccount } from "@reown/appkit/react";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { IconCash } from "@tabler/icons-react";
 import { Label } from "@/components/ui/label";
 import { store_stock_purchase } from "@/server-actions/buy/stock_holdings";
-import { getIfUserHasOwnedStock } from "@/server-actions/stocks/get_user_own_stock";
 // paystack hook
 import { usePaystack } from "@/hooks/use-paystack";
 import { makePaymentRequest } from "@/server-actions/paystack/makePaymentRequest";
@@ -28,7 +29,7 @@ import { Errors } from "@/constants/errors";
 import sendTokensToUser from "@/server-actions/contracts/send_token_user";
 import updateUserStockHoldings from "@/server-actions/stocks/update_stock_holdings";
 import { useEffect } from "react";
-import { useAppKitAccount } from "@reown/appkit/react";
+
 // Defines the form value type from the schema
 const paymentSchema = z.object({
   email: z.string().email("enter a valid email address"),
@@ -59,7 +60,6 @@ export function BuyStocksForm({
   const [tokenAmount, setTokenAmount] = useState("0");
 
   const { isConnected, address } = useAppKitAccount();
-  // const { signer } = useWallet();
   const { isReady: paystackReady, initiatePayment } = usePaystack();
 
   // Initialize the form
@@ -128,6 +128,7 @@ export function BuyStocksForm({
         callback: async (response) => {
           toast.success(`Payment complete! Reference:${response.reference}`);
           try {
+
             //store the stock purchase using the reference
             await store_stock_purchase({
               stock_symbol: data.stock_symbol,
@@ -140,36 +141,8 @@ export function BuyStocksForm({
               transaction_type: "buy",
             });
 
-            const userOwnStock = await getIfUserHasOwnedStock(
-              address,
-              entry.tokenID,
-            );
-            console.log("user own stock", userOwnStock);
-            //associate the token if needed
-            // if (!signer) {
-            //   toast.error("Wallet not connected");
-            //   return;
-            // }
-            // if (!isHederaSigner(signer)) {
-            //   toast.error("Invalid signer");
-            //   return;
-            // }
-
-            if (!userOwnStock) {
-              console.log("Does not own token");
-              // const txTokenAssociate = new TokenAssociateTransaction()
-              //   .setAccountId(accountId)
-              //   .setTokenIds([entry.tokenID]); //Fill in the token ID
-              //
-              //Sign with the private key of the account that is being associated to a token
-              //   const signTxTokenAssociate =
-              //     await txTokenAssociate.freezeWithSigner(signer);
-              //   console.log("Signing");
-              //   await signTxTokenAssociate.executeWithSigner(signer);
-              //   console.log("Finished signing");
-            }
-
             console.log("Sending tokens to user");
+            
             // Send tokens to user
             await sendTokensToUser({
               tokenId: entry.tokenID,
