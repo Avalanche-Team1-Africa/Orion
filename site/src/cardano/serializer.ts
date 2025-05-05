@@ -1,14 +1,19 @@
-import { Lucid, Blockfrost, NativeScript, getAddressDetails, fromText } from "lucid-cardano-nextjs";
+import {
+  Lucid,
+  Blockfrost,
+  NativeScript,
+  getAddressDetails,
+  fromText,
+} from "lucid-cardano-nextjs";
 import invariant from "tiny-invariant";
 import "dotenv/config";
-
 
 const MINTER_SEED = process.env.MINTER_SEED!;
 const BLOCKFROST_APIKEY = process.env.BLOCKFROST_APIKEY!;
 const OWNER_KEY = process.env.OWNER_KEY!;
 
 if (!MINTER_SEED || !BLOCKFROST_APIKEY || !OWNER_KEY) {
-    throw new Error("Missing environment variables");
+  throw new Error("Missing environment variables");
 }
 export const loadLucid = async (wallet: string, blockfrostApiKey: string) => {
     try {
@@ -22,62 +27,61 @@ export const loadLucid = async (wallet: string, blockfrostApiKey: string) => {
             "Preprod"
         );
 
-        if (wallet.includes(" ")) {
-            lucid.selectWalletFromSeed(wallet);
-        } else {
-            lucid.selectWalletFromPrivateKey(wallet);
-        }
-        return lucid;
+    if (wallet.includes(" ")) {
+      lucid.selectWalletFromSeed(wallet);
+    } else {
+      lucid.selectWalletFromPrivateKey(wallet);
     }
-    catch (error) {
-        console.error("Error loading Lucid", error);
-        throw error;
-    }
+    return lucid;
+  } catch (error) {
+    console.error("Error loading Lucid", error);
+    throw error;
+  }
 };
 
 const getKeyHash = (address: string) => {
-    try {
-        const { paymentCredential } = getAddressDetails(address);
-        invariant(paymentCredential);
-        return paymentCredential.hash;
-    }
-    catch (error) {
-        console.error("Error getting key hash", error);
-        throw error;
-    }
+  try {
+    const { paymentCredential } = getAddressDetails(address);
+    invariant(paymentCredential);
+    return paymentCredential.hash;
+  } catch (error) {
+    console.error("Error getting key hash", error);
+    throw error;
+  }
 };
 const loadMintingPolicy = async (ownerHash: string, minter: Lucid) => {
-    try {
-        const jsonData: NativeScript = {
-            "type": "all",
-            "scripts": [
-                // {
-                //     "type": "before",
-                //     "slot": Number(minter.utils.unixTimeToSlot(Date.now() + 3600 * 1000))
-                // },
-                {
-                    "type": "sig",
-                    "keyHash": ownerHash
-                }
-            ]
-        }
-        return jsonData;
-    }
-    catch (error) {
-        console.error("Error loading minting policy", error);
-        throw error;
-    }
+  // linting fix
+  console.log(minter);
+  try {
+    const jsonData: NativeScript = {
+      type: "all",
+      scripts: [
+        // {
+        //     "type": "before",
+        //     "slot": Number(minter.utils.unixTimeToSlot(Date.now() + 3600 * 1000))
+        // },
+        {
+          type: "sig",
+          keyHash: ownerHash,
+        },
+      ],
+    };
+    return jsonData;
+  } catch (error) {
+    console.error("Error loading minting policy", error);
+    throw error;
+  }
 };
 export const mintAsset = async (assetName: string, amount: number) => {
-    try {
-        const minter = await loadLucid(MINTER_SEED, BLOCKFROST_APIKEY)
-        const owner = await loadLucid(OWNER_KEY, BLOCKFROST_APIKEY);
-        const [address, ownerUtxos, utxos, minterAddress] = await Promise.all([
-            owner.wallet.address(),
-            owner.wallet.getUtxos(),
-            minter.wallet.getUtxos(),
-            minter.wallet.address(),
-        ]);
+  try {
+    const minter = await loadLucid(MINTER_SEED, BLOCKFROST_APIKEY);
+    const owner = await loadLucid(OWNER_KEY, BLOCKFROST_APIKEY);
+    const [address, ownerUtxos, utxos, minterAddress] = await Promise.all([
+      owner.wallet.address(),
+      owner.wallet.getUtxos(),
+      minter.wallet.getUtxos(),
+      minter.wallet.address(),
+    ]);
 
         invariant(utxos.length, `${minterAddress} needs to be funded`);
         invariant(ownerUtxos.length, `${address} needs to be funded`);
