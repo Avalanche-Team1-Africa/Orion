@@ -10,7 +10,7 @@ const OWNER_KEY = process.env.OWNER_KEY!;
 if (!MINTER_SEED || !BLOCKFROST_APIKEY || !OWNER_KEY) {
     throw new Error("Missing environment variables");
 }
-const loadLucid = async (wallet: string, blockfrostApiKey: string) => {
+export const loadLucid = async (wallet: string, blockfrostApiKey: string) => {
     try {
         const network = blockfrostApiKey.substring(0, 7);
         invariant(network);
@@ -92,7 +92,7 @@ export const mintAsset = async (assetName: string, amount: number) => {
                 [fullAssetName]: BigInt(amount),
             })
             .payToAddress(minterAddress, {
-                [fullAssetName]: BigInt(amount), lovelace: BigInt(2000000)
+                [fullAssetName]: BigInt(amount), lovelace: BigInt(1000000)
             })
             .addSignerKey(ownerHash)
             .attachMintingPolicy(script)
@@ -103,7 +103,6 @@ export const mintAsset = async (assetName: string, amount: number) => {
             .complete();
 
         await signedTx.submit();
-        console.log("full asset name", fullAssetName);
         return fullAssetName;
     }
     catch (error) {
