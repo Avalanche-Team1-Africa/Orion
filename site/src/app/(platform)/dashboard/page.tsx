@@ -4,10 +4,6 @@ import getGraphData from "@/server-actions/dashboard/graph";
 import { sendNotification } from "@/server-actions/sell/notify";
 import { GraphDataMode } from "@/constants/types";
 import { Button } from "@/components/ui/button";
-// import {
-//   HWBridgeSigner,
-//   HederaSignerType,
-// } from "@buidlerlabs/hashgraph-react-wallets";
 import {
   Card,
   CardContent,
@@ -56,11 +52,8 @@ import {
   getTotalPortfolioValue,
   getInitialInvestment,
 } from "@/server-actions/stocks/dashboard";
-// import { useAccountId, useWallet } from "@buidlerlabs/hashgraph-react-wallets";
-// import { TransferTransaction } from "@hashgraph/sdk";
-import { transferHbar } from "@/server-actions/contracts/transfer_hbar";
 import updateUserStockHoldings from "@/server-actions/stocks/update_stock_holdings";
-import { useAccount, useWriteContract, useConnectorClient } from "wagmi";
+import { useAccount, useWriteContract /*useConnectorClient*/ } from "wagmi";
 import { CONTRACT_ABI, CONTRACT_ADDRESS } from "@/contract/abi/constants";
 import { parseEther } from "viem";
 
@@ -81,16 +74,10 @@ interface PerformanceData {
 }
 
 type DateRange = "1w" | "1m";
-// function isHederaSigner(signer: HWBridgeSigner): signer is HederaSignerType {
-//   // Check based on properties that are unique to HederaSignerType
-//   return (signer as HederaSignerType).topic !== undefined;
-// }
 const DashBoardPage = () => {
   const { isConnected, address } = useAccount();
-  const { data: connectorClient } = useConnectorClient(); // for signing
-  const { writeContractAsync, isSuccess } = useWriteContract({});
-  //const { isConnected } = useWallet();
-  //const { data: address } = useAccountId();
+  // const { data: connectorClient } = useConnectorClient(); // for signing
+  const { writeContractAsync } = useWriteContract({});
   const [isSelling, setIsSelling] = useState(false);
   const [portfolio, setPortfolio] = useState<StockHoldings[]>([]);
   const [performanceData, setPerformanceData] = useState<PerformanceData[]>([]);
@@ -200,7 +187,11 @@ const DashBoardPage = () => {
       const currentPricePerShare =
         selectedStock.current_price / selectedStock.shares;
       const saleAmount = currentPricePerShare * sellQuantity;
-      await sellToken(sellQuantity, selectedStock.tokenId, currentPricePerShare.toString());
+      await sellToken(
+        sellQuantity,
+        selectedStock.tokenId,
+        currentPricePerShare.toString(),
+      );
       // Send notification
       if (paymentMethod === "mobile") {
         console.log("Mobile payment selected");
@@ -246,7 +237,11 @@ const DashBoardPage = () => {
       setIsSelling(false);
     }
   };
-  const sellToken = async (amount: number, tokenId: string, pricePerShare: string) => {
+  const sellToken = async (
+    amount: number,
+    tokenId: string,
+    pricePerShare: string,
+  ) => {
     // const object = {
     //   tokenId: tokenId,
     //   amount: amount,
@@ -260,35 +255,19 @@ const DashBoardPage = () => {
       return;
     }
 
-    try{
+    try {
       await writeContractAsync({
         abi: CONTRACT_ABI,
         address: CONTRACT_ADDRESS,
         functionName: "sellShares",
-        args: [ 
-          BigInt(tokenId),
-          BigInt(amount), 
-          parseEther(pricePerShare)
-        ],
+        args: [BigInt(tokenId), BigInt(amount), parseEther(pricePerShare)],
       });
 
       toast.success("Sell transaction submitted");
-    } catch( err: any){
-      console.error("Error occured while selling tokens", err)
-      toast.error("Sell transaction failed")
+    } catch (err) {
+      console.error("Error occured while selling tokens", err);
+      toast.error("Sell transaction failed");
     }
-    // if (!connectorClient) {
-    //   toast.error("Invalid signer");
-    //   return;
-    // }
-    // const transferTokenTx = new TransferTransaction()
-    //   .addTokenTransfer(object.tokenId, accountId, -amount) //Fill in the token ID
-    //   .addTokenTransfer(object.tokenId, "0.0.5785413", amount); //Fill in the token ID and receiver account
-    
-    // console.log("Signing transfer of coinst transaction");
-    // const signedTx = await transferTokenTx.freezeWithSigner(signer);
-    // await signedTx.executeWithSigner(signer);
-    // console.log("Done signing");
   };
 
   if (!isConnected) {
@@ -321,8 +300,8 @@ const DashBoardPage = () => {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] p-4">
-        <div className="bg-red-50 p-4 rounded-lg max-w-md text-center">g
-          <h2 className="text-red-600 font-bold mb-2">Error Loading Data</h2>
+        <div className="bg-red-50 p-4 rounded-lg max-w-md text-center">
+          g<h2 className="text-red-600 font-bold mb-2">Error Loading Data</h2>
           <p className="text-red-500 mb-4">{error}</p>
           <Button variant="outline" onClick={() => window.location.reload()}>
             Try Again
