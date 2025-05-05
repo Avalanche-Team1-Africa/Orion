@@ -1,0 +1,16 @@
+import { mintAsset } from "@/app/cardano/serializer";
+import { TokenSchema } from "@/app/types/token";
+export async function POST(request: Request) {
+    try {
+        const body = await request.json();
+        const parsed = TokenSchema.safeParse(body);
+        if (!parsed.success) throw new Error("Invalid data");
+        const { assetName, supply } = parsed.data;
+        const tokenId = await mintAsset(assetName, supply);
+        //save toenId to database
+        return Response.json({ message: "Token minted" }, { status: 200 })
+    }
+    catch {
+        return Response.json({ message: "Error minting token" }, { status: 500 })
+    }
+}
