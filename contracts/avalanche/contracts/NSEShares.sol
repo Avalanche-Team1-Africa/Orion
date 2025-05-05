@@ -7,13 +7,12 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract NSEShares is ERC1155, Ownable {
     uint256 public constant TOTAL_SHARES = 58;
+    address public constant holdingWallet = 0x245A972B2df724a443E64B5948DEb5a89102641e;
 
     mapping(uint256 => string) public shareSymbols;
 
     event SharePurchased(address indexed buyer, uint256 indexed tokenId, uint256 amount);
-    event ShareSold(address indexed seller, uint256 indexed tokenId, uint256 amount, uint256 totalPrice);
-    event Withdrawal(address indexed owner, uint256 amount);
-
+    event ShareSellRequest(address indexed seller, uint256 indexed tokenId, uint256 amount, uint256 requestedPrice);
 
     constructor() ERC1155("https://nse-seven.vercel.app/api/shares/{id}.json") Ownable(msg.sender) {
         string[58] memory symbols = [
@@ -31,7 +30,7 @@ contract NSEShares is ERC1155, Ownable {
         }
     }
 
-    //buy function to transfer shares to buyer when payment is confirmed
+    //backend calls this after receiving payment to transfer shares to buyer
     function buyShare(uint256 tokenId, uint256 amount, address recipient) external onlyOwner {
         require(tokenId < TOTAL_SHARES, "Invalid token ID");
         require(balanceOf(msg.sender, tokenId) >= amount, "Not enough shares available");
@@ -41,37 +40,18 @@ contract NSEShares is ERC1155, Ownable {
         emit SharePurchased(recipient, tokenId, amount);
     }
 
-    //function to sell shares back to the contract
-    function sellShares(uint256 tokenId, uint256 amount, uint256 pricePerShare) external {
+    //user calls this to sell their shares back to holdingWallet
+    function sellShares(uint256 tokenId, uint256 amount, uint256 requestedPrice) external {
         require(balanceOf(msg.sender, tokenId) >= amount, "Not enough shares to sell");
 
-        uint256 totalPrice = pricePerShare * amount; // Calculate how much AVAX to pay back
-        require(address(this).balance >= totalPrice, "Contract does not have enough AVAX");
+        // Transfer shares from user to holding address
+        safeTransferFrom(msg.sender, holdingWallet, tokenId, amount, "");
 
-        // Transfer shares from user to contract
-        safeTransferFrom(msg.sender, address(this), tokenId, amount, "");
-
-        // Send AVAX to the user
-        payable(msg.sender).transfer(totalPrice);
-
-        emit ShareSold(msg.sender, tokenId, amount, totalPrice);
+        emit ShareSellRequest(msg.sender, tokenId, amount, requestedPrice);
     }
 
     //function to check how many shares of a specific nse stock a user owns
     function checkShareBalance(address user, uint256 tokenId) external view returns (uint256) {
         return balanceOf(user, tokenId);
     }
-
-    // Only owner can withdraw AVAX accumulated in the contract
-    function withdraw(uint256 amount) external onlyOwner {
-        require(address(this).balance >= amount, "Not enough balance to withdraw");
-
-        // Send the specified amount of AVAX to the owner
-        payable(owner()).transfer(amount);
-        emit Withdrawal(owner(), amount);
-    }
-
-    receive() external payable {}
-    fallback() external payable {}
-
 }

@@ -59,7 +59,7 @@ export function BuyStocksForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tokenAmount, setTokenAmount] = useState("0");
 
-  const { address, isConnected} = useAppKitAccount();
+  const { isConnected, address } = useAppKitAccount();
   const { isReady: paystackReady, initiatePayment } = usePaystack();
 
   // Initialize the form
@@ -86,7 +86,6 @@ export function BuyStocksForm({
   const onSubmit = async (data: FormValues) => {
     const finalAmount = Math.ceil(entry.price * quantity); // Calculate amount dynamically
     data.amount = finalAmount;
-
     if (!address || !isConnected) {
       toast.warning("you need to connect your wallet in order to proceed");
       return;

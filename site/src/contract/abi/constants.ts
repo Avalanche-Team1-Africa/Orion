@@ -1,4 +1,4 @@
-export const CONTRACT_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+export const CONTRACT_ADDRESS = "0x2531c55dE5AcF27c23bb0A1eE71094AcCb1426c8";
 
 export const CONTRACT_ABI = [
   {
@@ -223,11 +223,11 @@ export const CONTRACT_ABI = [
       {
         indexed: false,
         internalType: "uint256",
-        name: "totalPrice",
+        name: "requestedPrice",
         type: "uint256",
       },
     ],
-    name: "ShareSold",
+    name: "ShareSellRequest",
     type: "event",
   },
   {
@@ -322,29 +322,6 @@ export const CONTRACT_ABI = [
     ],
     name: "URI",
     type: "event",
-  },
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: true,
-        internalType: "address",
-        name: "owner",
-        type: "address",
-      },
-      {
-        indexed: false,
-        internalType: "uint256",
-        name: "amount",
-        type: "uint256",
-      },
-    ],
-    name: "Withdrawal",
-    type: "event",
-  },
-  {
-    stateMutability: "payable",
-    type: "fallback",
   },
   {
     inputs: [],
@@ -449,6 +426,19 @@ export const CONTRACT_ABI = [
         internalType: "uint256",
         name: "",
         type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "holdingWallet",
+    outputs: [
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
       },
     ],
     stateMutability: "view",
@@ -578,7 +568,7 @@ export const CONTRACT_ABI = [
       },
       {
         internalType: "uint256",
-        name: "pricePerShare",
+        name: "requestedPrice",
         type: "uint256",
       },
     ],
@@ -674,22 +664,5 @@ export const CONTRACT_ABI = [
     ],
     stateMutability: "view",
     type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "amount",
-        type: "uint256",
-      },
-    ],
-    name: "withdraw",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    stateMutability: "payable",
-    type: "receive",
   },
 ];

@@ -1,12 +1,17 @@
-import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
-  reactStrictMode: false,
-  /* config options here */
-  compiler: {
-    // Remove console logs only in production
-    removeConsole: process.env.NODE_ENV === "production",
-  },
-};
-
-export default nextConfig;
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+    reactStrictMode: true,
+    swcMinify: true,
+    webpack: (config: { experiments: { asyncWebAssembly: boolean; topLevelAwait: boolean; layers: boolean } }) => {
+      config.experiments = {
+        asyncWebAssembly: true,
+        topLevelAwait: true,
+        layers: true, // optional, with some bundlers/frameworks it doesn't work without
+      }
+  
+      return config
+    },
+  }
+  
+  module.exports = nextConfig
