@@ -22,7 +22,6 @@ import { Spinner } from "@/components/ui/spinner";
 import { IconCash } from "@tabler/icons-react";
 import { Label } from "@/components/ui/label";
 import { store_stock_purchase } from "@/server-actions/buy/stock_holdings";
-import { getIfUserHasOwnedStock } from "@/server-actions/stocks/get_user_own_stock";
 // paystack hook
 import { usePaystack } from "@/hooks/use-paystack";
 import { makePaymentRequest } from "@/server-actions/paystack/makePaymentRequest";
@@ -60,9 +59,7 @@ export function BuyStocksForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tokenAmount, setTokenAmount] = useState("0");
 
-  const { address, isConnected, caipAddress, status, embeddedWalletInfo } = useAppKitAccount();
-
-  const { signer } = useWallet();
+  const { address, isConnected} = useAppKitAccount();
   const { isReady: paystackReady, initiatePayment } = usePaystack();
 
   // Initialize the form
@@ -151,13 +148,13 @@ export function BuyStocksForm({
             await sendTokensToUser({
               tokenId: entry.tokenID,
               amount: quantity,
-              userWalletAddress: accountId,
+              userWalletAddress: address,
             });
 
             console.log("Updating user stock holdings");
             await updateUserStockHoldings({
               stock_symbol: data.stock_symbol,
-              user_address: accountId,
+              user_address: address,
               stock_name: entry.name,
               number_stock: quantity,
               tokenId: entry.tokenID,
