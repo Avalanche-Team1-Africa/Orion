@@ -15,19 +15,14 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+
+import { useAppKitAccount } from "@reown/appkit/react";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { IconCash } from "@tabler/icons-react";
 import { Label } from "@/components/ui/label";
 import { store_stock_purchase } from "@/server-actions/buy/stock_holdings";
-import {
-  HederaSignerType,
-  HWBridgeSigner,
-  useAccountId,
-  useWallet,
-} from "@buidlerlabs/hashgraph-react-wallets";
 import { getIfUserHasOwnedStock } from "@/server-actions/stocks/get_user_own_stock";
-import { TokenAssociateTransaction } from "@hashgraph/sdk";
 // paystack hook
 import { usePaystack } from "@/hooks/use-paystack";
 import { makePaymentRequest } from "@/server-actions/paystack/makePaymentRequest";
@@ -50,11 +45,6 @@ const paymentSchema = z.object({
 
 type FormValues = z.infer<typeof paymentSchema>;
 
-function isHederaSigner(signer: HWBridgeSigner): signer is HederaSignerType {
-  // Check based on properties that are unique to HederaSignerType
-  return (signer as HederaSignerType).topic !== undefined;
-}
-
 type BuyStocksFormProps = {
   entry: StockData;
   setDialogOpen?: (open: boolean) => void;
@@ -70,8 +60,8 @@ export function BuyStocksForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tokenAmount, setTokenAmount] = useState("0");
 
-  const { isConnected } = useWallet();
-  const { data: accountId } = useAccountId();
+  const { address, isConnected, caipAddress, status, embeddedWalletInfo } = useAppKitAccount();
+
   const { signer } = useWallet();
   const { isReady: paystackReady, initiatePayment } = usePaystack();
 
@@ -99,7 +89,8 @@ export function BuyStocksForm({
   const onSubmit = async (data: FormValues) => {
     const finalAmount = Math.ceil(entry.price * quantity); // Calculate amount dynamically
     data.amount = finalAmount;
-    if (!accountId || !isConnected) {
+
+    if (!address || !isConnected) {
       toast.warning("you need to connect your wallet in order to proceed");
       return;
     }
@@ -141,6 +132,7 @@ export function BuyStocksForm({
         callback: async (response) => {
           toast.success(`Payment complete! Reference:${response.reference}`);
           try {
+
             //store the stock purchase using the reference
             await store_stock_purchase({
               stock_symbol: data.stock_symbol,
@@ -148,41 +140,13 @@ export function BuyStocksForm({
               amount_shares: quantity,
               buy_price: finalAmount,
               paystack_id: transaction.reference,
-              user_wallet: accountId,
+              user_wallet: address,
               purchase_date: new Date(),
               transaction_type: "buy",
             });
 
-            const userOwnStock = await getIfUserHasOwnedStock(
-              accountId,
-              entry.tokenID,
-            );
-            console.log("user own stock", userOwnStock);
-            //associate the token if needed
-            if (!signer) {
-              toast.error("Wallet not connected");
-              return;
-            }
-            if (!isHederaSigner(signer)) {
-              toast.error("Invalid signer");
-              return;
-            }
-
-            if (!userOwnStock) {
-              console.log("Does not own token");
-              const txTokenAssociate = new TokenAssociateTransaction()
-                .setAccountId(accountId)
-                .setTokenIds([entry.tokenID]); //Fill in the token ID
-
-              //Sign with the private key of the account that is being associated to a token
-              const signTxTokenAssociate =
-                await txTokenAssociate.freezeWithSigner(signer);
-              console.log("Signing");
-              await signTxTokenAssociate.executeWithSigner(signer);
-              console.log("Finished signing");
-            }
-
             console.log("Sending tokens to user");
+            
             // Send tokens to user
             await sendTokensToUser({
               tokenId: entry.tokenID,
