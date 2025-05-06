@@ -7,11 +7,7 @@ import { CONTRACT_ABI, CONTRACT_ADDRESS } from "./abi/constants";
 import 'dotenv/config'
 import { CardanoToken } from "@/types/token";
 import { mintAsset } from "@/cardano/serializer";
-interface CreateStockTokenArgs {
-    symbol: string;
-    name: string;
-    totalShares: number;
-}
+
 interface BuyTokenArgs {
     tokenId: string;
     userWalletAddress: string;
@@ -31,7 +27,8 @@ export class SmartContract {
         }
 
         this.web3 = new Web3("https://rpc.ankr.com/avalanche_fuji");
-        this.account = this.web3.eth.accounts.wallet.add(process.env.PRIVATEKEY);
+        const account = this.web3.eth.accounts.privateKeyToAccount(process.env.PRIVATEKEY);
+        this.account = this.web3.eth.accounts.wallet.add(account);
         this.avalancheContract = new this.web3.eth.Contract(CONTRACT_ABI, CONTRACT_ADDRESS);
     }
 
