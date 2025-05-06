@@ -10,3 +10,5 @@ export const sendTokenSchema = z.object({
     amount: z.number(),
     receiverAddress: z.string(),
 })
+
+export type CardanoToken = z.infer<typeof TokenSchema>;

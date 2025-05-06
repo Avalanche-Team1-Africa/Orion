@@ -1,16 +1,19 @@
 "use server";
 import { Errors, MyError } from "@/constants/errors";
+import { Chains } from "@/constants/status";
 import smartContract from "@/contract";
 import database from "@/db";
 import { CreateStockTokenArgs } from "@/types/stocks";
 
+// This creats the stock in cardano
 export async function createStock(args: CreateStockTokenArgs) {
   try {
     //Check if the stock with the symbol exists
-    const stockExists = await database.checkIfStockExists(args.symbol);
+    const stockExists = await database.checkIfStockExists(args.symbol, Chains.CARDANO);
     if (stockExists) {
       return stockExists;
     }
+    
     //Call the function to create the token onchain
     const tokenId = await smartContract.createStock({
       symbol: args.symbol,
