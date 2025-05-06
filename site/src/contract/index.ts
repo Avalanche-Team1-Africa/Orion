@@ -2,9 +2,11 @@
 import { Errors, MyError } from "@/constants/errors";
 import "../../envConfig";
 import Web3 from "web3";
-import {CONTRACT_ABI, CONTRACT_ADDRESS} from "./abi/constants";
+import { CONTRACT_ABI, CONTRACT_ADDRESS } from "./abi/constants";
 
 import 'dotenv/config'
+import { CardanoToken } from "@/types/token";
+import { mintAsset } from "@/cardano/serializer";
 interface CreateStockTokenArgs {
     symbol: string;
     name: string;
@@ -33,41 +35,18 @@ export class SmartContract {
         this.avalancheContract = new this.web3.eth.Contract(CONTRACT_ABI, CONTRACT_ADDRESS);
     }
 
-    async createStock(args: CreateStockTokenArgs): Promise<string> {
-        console.log(args); 
-        // const client: Client = Client.forTestnet();
+    // Creates stock in cardano
+    async createStockOnCardano(args: CardanoToken): Promise<string> {
         try {
-            //     // Your account ID and private key from string value
-            //     const MY_ACCOUNT_ID = AccountId.fromString(this.accountID);
-            //     const MY_PRIVATE_KEY = PrivateKey.fromStringED25519(this.privateKey);
-            //     //Set the operator with the account ID and private key
-            //     client.setOperator(MY_ACCOUNT_ID, MY_PRIVATE_KEY);
-            //     //Create the transaction and freeze for manual signing
-            //     const txTokenCreate = new TokenCreateTransaction()
-            //         .setTokenName(args.name)
-            //         .setTokenSymbol(args.symbol)
-            //         .setTokenType(TokenType.FungibleCommon)
-            //         .setTreasuryAccountId(MY_ACCOUNT_ID)
-            //         .setFreezeDefault(false)
-            //         .setInitialSupply(args.totalShares)
-            //         .freezeWith(client);
-            //     //Sign the transaction with the token treasury account private key
-            //     const signTxTokenCreate = await txTokenCreate.sign(MY_PRIVATE_KEY);
-            //     //Sign the transaction with the client operator private key and submit to a Hedera network
-            //     const txTokenCreateResponse = await signTxTokenCreate.execute(client);
-            //     //Get the receipt of the transaction
-            //     const receiptTokenCreateTx = await txTokenCreateResponse.getReceipt(client);
-            //     //Get the token ID from the receipt
-            //     const tokenId = receiptTokenCreateTx.tokenId!;
-            //     return tokenId.toString()
-            throw new MyError("Not Implemented");
+            const { assetName, supply } = args;
+            const tokenId = await mintAsset(assetName, supply);
+            //linting fix
+            console.log("token id=>", tokenId);
+            return tokenId;
         }
         catch (error) {
-            console.error("Error creating stock token:", error);
+            console.error("Error creating stock token in Cardano:", error);
             throw error;
-        }
-        finally {
-            // if (client) client.close();
         }
     }
 
