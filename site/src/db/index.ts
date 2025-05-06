@@ -12,7 +12,7 @@ import {
   USERSTOCKS,
 } from "./collections";
 import { ObjectId } from "mongodb";
-import { Chains, PaymentStatus } from "@/constants/status";
+import { PaymentStatus } from "@/constants/status";
 
 interface GetStocks {
   id: string;
