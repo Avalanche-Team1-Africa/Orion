@@ -21,12 +21,12 @@ export class SmartContract {
     // private privateKey: string;
 
     constructor() {
-        if (!process.env.PRIVATEKEY) {
-            console.error("Set PRIVATEKEY in env");
+        if (!process.env.PRIVATEKEY || !process.env.RPC_URL) {
+            console.error("Set PRIVATEKEY and RPC_URL in env");
             throw new MyError(Errors.INVALID_SETUP);
         }
 
-        this.web3 = new Web3("https://rpc.ankr.com/avalanche_fuji");
+        this.web3 = new Web3(process.env.RPC_URL);
         const account = this.web3.eth.accounts.privateKeyToAccount(process.env.PRIVATEKEY);
         this.account = this.web3.eth.accounts.wallet.add(account);
         this.avalancheContract = new this.web3.eth.Contract(CONTRACT_ABI, CONTRACT_ADDRESS);
@@ -47,11 +47,16 @@ export class SmartContract {
         }
     }
 
-    async buyStock(args: BuyTokenArgs): Promise<string> {
+    async buyStockAvalanche(args: BuyTokenArgs): Promise<string> {
         console.log(args);
         try {
+            const amount = BigInt(args.amount);
+            const tokenID = BigInt(Number.parseInt(args.tokenId));
+            
             const txReceipt = await this.avalancheContract.methods.buyShare(
-
+                tokenID,
+                amount,
+                args.userWalletAddress
             ).send({
                 from: this.account[0].address,
                 gas: "1000000",

@@ -21,6 +21,7 @@ declare global {
             BLOCKFROST_APIKEY: string;
             MINTER_SEED: string;
             OWNER_KEY: string;
+            RPC_URL: string;
         }
     }
 }
