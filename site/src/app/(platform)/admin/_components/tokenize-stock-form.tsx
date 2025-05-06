@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/card";
 import { IconSwitch, IconFlagBitcoin } from "@tabler/icons-react";
 import { useState } from "react";
-import { createStock } from "@/server-actions/creations/stocks";
+import { createStockOnCardano } from "@/server-actions/creations/stocks";
 import { Spinner } from "@/components/ui/spinner";
 
 // Define the form schema with Zod
@@ -42,10 +42,6 @@ const stockFormSchema = z.object({
     .string()
     .transform((val) => parseInt(val))
     .pipe(z.number().gt(0, "must be greater than 0")),
-  sharePrice: z
-    .string()
-    .transform((val) => parseInt(val))
-    .pipe(z.number().gt(0, "must be greater than 0")),
 });
 
 // Defines the form value type from the schema
@@ -56,7 +52,6 @@ const defaultValues: Partial<StockFormValues> = {
   symbol: "",
   name: "",
   totalShares: 0,
-  sharePrice: 0,
 };
 
 export const TokenizeStockForm = () => {
@@ -71,10 +66,10 @@ export const TokenizeStockForm = () => {
     setIsSubmitting(true);
     try {
       //TODO: Call Server Action/endpoint
-      await createStock(data);
+      await createStockOnCardano(data);
       // Show success message
       toast.success(
-        `Stock tokenized successfully:${data.name} (${data.symbol}) has been added to the marketplace.`,
+        `Stock tokenized successfully:${data.name} (${data.symbol} on Cardano) has been added to the marketplace.`,
       );
 
       // Reset the form
@@ -91,13 +86,13 @@ export const TokenizeStockForm = () => {
     <div className="container mx-auto max-w-3xl px-4 py-2 justify-self-center">
       <div className="mb-4 flex items-center gap-2">
         <IconSwitch className="h-6 w-6 text-primary" />
-        <h1 className="text-2xl font-bold">Stock Tokenization</h1>
+        <h1 className="text-2xl font-bold">Stock Tokenization on Cardano</h1>
       </div>
       <Card className="shadow-sm">
         <CardHeader>
           <CardTitle>Tokenize New Stock</CardTitle>
           <CardDescription>
-            Add a new stock to the marketplace by filling out the details below.
+            Add a new Cardano version of a stock to the marketplace by filling out the details below.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -152,26 +147,6 @@ export const TokenizeStockForm = () => {
                     </FormControl>
                     <FormDescription>
                       The total number of shares available
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="sharePrice"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Share Price</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="enter the cost of a single share"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      The cost of a single share
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
