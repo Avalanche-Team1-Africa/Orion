@@ -56,6 +56,7 @@ import updateUserStockHoldings from "@/server-actions/stocks/update_stock_holdin
 import { useAccount, useWriteContract /*useConnectorClient*/ } from "wagmi";
 import { CONTRACT_ABI, CONTRACT_ADDRESS } from "@/contract/abi/constants";
 import { parseEther } from "viem";
+import transferAVAX from "@/server-actions/sell/transfer_avax";
 
 interface StockHoldings {
   tokenId: string;
@@ -92,6 +93,8 @@ const DashBoardPage = () => {
   const [paymentMethod, setPaymentMethod] = useState("mobile");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [dateRange, setDateRange] = useState<DateRange>("1w");
+
+  const KES_TO_AVAX = 2560;
   // const { signer } = useWallet();
   // const { data: accountId } = useAccountId();
 
@@ -187,10 +190,12 @@ const DashBoardPage = () => {
       const currentPricePerShare =
         selectedStock.current_price / selectedStock.shares;
       const saleAmount = currentPricePerShare * sellQuantity;
+      const saleAmountAVAX = saleAmount / KES_TO_AVAX;
+      console.log("Sale amount =>", saleAmount)
       await sellToken(
         sellQuantity,
         selectedStock.tokenId,
-        currentPricePerShare.toString(),
+        Math.ceil(currentPricePerShare)
       );
       // Send notification
       if (paymentMethod === "mobile") {
@@ -200,7 +205,12 @@ const DashBoardPage = () => {
           amount: saleAmount,
         });
         console.log("Payment done");
+      } else {
+        console.log("Pay with crypto selected");
+        await transferAVAX({address, amount: saleAmountAVAX});
+        console.log("Pay with crypo done");
       }
+
       console.log("Beginning to update stock holdings");
       await updateUserStockHoldings({
         user_address: address,
@@ -240,7 +250,7 @@ const DashBoardPage = () => {
   const sellToken = async (
     amount: number,
     tokenId: string,
-    pricePerShare: string,
+    pricePerShare: number,
   ) => {
     // const object = {
     //   tokenId: tokenId,
@@ -260,7 +270,8 @@ const DashBoardPage = () => {
         abi: CONTRACT_ABI,
         address: CONTRACT_ADDRESS,
         functionName: "sellShares",
-        args: [BigInt(tokenId), BigInt(amount), parseEther(pricePerShare)],
+        // args: [BigInt(tokenId), BigInt(amount), parseEther(pricePerShare)],
+        args: [BigInt(tokenId), BigInt(amount), BigInt(pricePerShare)],
       });
 
       toast.success("Sell transaction submitted");
