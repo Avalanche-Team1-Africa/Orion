@@ -12,10 +12,9 @@ const database = client.db(dbName);
 export interface STOCKS {
   symbol: string;
   name: string;
-  todayPrice: number;
   totalShares: number;
-  stockID?: string;
   tokenID: string;
+  chain: string;
 }
 
 export interface STOCKPRICES {

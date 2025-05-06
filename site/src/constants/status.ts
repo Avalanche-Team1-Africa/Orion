@@ -3,3 +3,8 @@ export enum PaymentStatus {
     PAID = "Paid",
     FAILED = "Failed"
 }
+
+export enum Chains {
+    CARDANO = "cardano",
+    AVALANCHE = "avalanche"
+}

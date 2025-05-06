@@ -12,7 +12,7 @@ import {
   USERSTOCKS,
 } from "./collections";
 import { ObjectId } from "mongodb";
-import { PaymentStatus } from "@/constants/status";
+import { Chains, PaymentStatus } from "@/constants/status";
 
 interface GetStocks {
   id: string;
@@ -53,9 +53,9 @@ export class MyDatabase {
       throw new MyError(Errors.NOT_CREATE_STOCK_DB);
     }
   }
-  async checkIfStockExists(symbol: string): Promise<string | null> {
+  async checkIfStockExists(symbol: string, chain: string): Promise<string | null> {
     try {
-      const stock = await STOCKS_COLLECTION.findOne({ symbol });
+      const stock = await STOCKS_COLLECTION.findOne({ symbol, chain });
       if (stock) {
         return stock.tokenID;
       } else {
@@ -334,3 +334,420 @@ export class MyDatabase {
 
 const database = new MyDatabase();
 export default database;
+
+// (async () => {
+//   const tokens: STOCKS[] = [
+//     {
+//       tokenID: "0",
+//       "symbol": "SCOM",
+//       "name": "Safaricom Plc",
+//       totalShares: 9457500,
+//       chain: Chains.AVALANCHE,
+//     },
+//     {
+//       tokenID: "1",
+//       "symbol": "EQTY",
+//       "name": "Equity Group Holdings Limited",
+//       totalShares: 1087700,
+//       chain: Chains.AVALANCHE,
+//     },
+//     {
+//       tokenID: "2",
+//       chain: Chains.AVALANCHE,
+//       "symbol": "EABL",
+//       totalShares: 64300,
+//       "name": "East African Breweries Limited",
+//     },
+//     {
+//       tokenID: "3",
+//       "symbol": "KCB",
+//       totalShares: 497200,
+//       chain: Chains.AVALANCHE,
+//       "name": "KCB Group",
+//     },
+//     {
+//       tokenID: "4",
+//       totalShares: 17200,
+//       chain: Chains.AVALANCHE,
+//       "symbol": "SCBK",
+//       "name": "Standard Chartered Bank Limited",
+//     },
+//     {
+//       tokenID: "5",
+//       "symbol": "ABSA",
+//       totalShares: 248200,
+//       "name": "Absa Bank Kenya Plc",
+//       chain: Chains.AVALANCHE
+//     },
+//     {
+//       tokenID: "6",
+//       chain: Chains.AVALANCHE,
+//       "symbol": "COOP",
+//       totalShares: 261300,
+//       "name": "Co-operative Bank of Kenya Limited",
+//     },
+//     {
+//       tokenID: "7",
+//       totalShares: 163800,
+//       chain: Chains.AVALANCHE,
+//       "symbol": "NCBA",
+//       "name": "NCBA Group Plc",
+//     },
+//     {
+//       tokenID: "8",
+//       "symbol": "SBIC",
+//       "name": "Stanbic Holdings Limited",
+//       totalShares: 9500,
+//       chain: Chains.AVALANCHE,
+//     },
+//     {
+//       tokenID: "9",
+//       "symbol": "IMH",
+//       totalShares: 165100,
+//       chain: Chains.AVALANCHE,
+//       "name": "I&M Holdings Plc",
+//     },
+//     {
+//       tokenID: "10",
+//       "symbol": "BAT",
+//       totalShares: 700,
+//       chain: Chains.AVALANCHE,
+//       "name": "British American Tobacco Kenya",
+//     },
+//     {
+//       tokenID: "11",
+//       "symbol": "KEGN",
+//       totalShares: 1694600,
+//       chain: Chains.AVALANCHE,
+//       "name": "KenGen Plc",
+//     },
+//     {
+//       tokenID: "12",
+//       "symbol": "BKG",
+//       totalShares: 52900,
+//       chain: Chains.AVALANCHE,
+//       "name": "BK Group Plc",
+//     },
+//     {
+//       tokenID: "13",
+//       "symbol": "KQ",
+//       totalShares: 230400,
+//       chain: Chains.AVALANCHE,
+//       "name": "Kenya Airways Limited",
+//     },
+//     {
+//       tokenID: "14",
+//       chain: Chains.AVALANCHE,
+//       totalShares: 93400,
+//       "symbol": "UMME",
+//       "name": "Umeme Limited",
+//     },
+//     {
+//       tokenID: "15",
+//       chain: Chains.AVALANCHE,
+//       "symbol": "DTK",
+//       totalShares: 3500,
+//       "name": "Diamond Trust Bank Kenya Limited",
+//     },
+//     {
+//       tokenID: "16",
+//       "symbol": "BAMB",
+//       totalShares: 248200,
+//       chain: Chains.AVALANCHE,
+//       "name": "Bamburi Cement Limited",
+//     },
+//     {
+//       tokenID: "17",
+//       chain: Chains.AVALANCHE,
+//       "symbol": "BRIT",
+//       totalShares: 405900,
+//       "name": "Britam Holdings Limited",
+//     },
+//     {
+//       tokenID: "18",
+//       "symbol": "JUB",
+//       totalShares: 7600,
+//       chain: Chains.AVALANCHE,
+//       "name": "Jubilee Holdings Limited",
+//     },
+//     {
+//       tokenID: "19",
+//       totalShares: 3700,
+//       chain: Chains.AVALANCHE,
+//       "symbol": "TOTL",
+//       "name": "Total Kenya Limited",
+//     },
+//     {
+//       tokenID: "20",
+//       "symbol": "KPLC",
+//       totalShares: 921600,
+//       chain: Chains.AVALANCHE,
+//       "name": "Kenya Power & Lighting Company",
+//     },
+//     {
+//       tokenID: "21",
+//       "symbol": "KNRE",
+//       totalShares: 13777900,
+//       chain: Chains.AVALANCHE,
+//       "name": "Kenya Re-Insurance Corporation Ltd",
+//     },
+//     {
+//       tokenID: "22",
+//       "symbol": "KUKZ",
+//       totalShares: 7600,
+//       chain: Chains.AVALANCHE,
+//       "name": "Kakuzi Limited",
+//     },
+//     {
+//       tokenID: "23",
+//       chain: Chains.AVALANCHE,
+//       "symbol": "CIC",
+//       totalShares: 68200,
+//       "name": "CIC Insurance Group Limited",
+//     },
+//     {
+//       tokenID: "24",
+//       chain: Chains.AVALANCHE,
+//       "symbol": "CTUM",
+//       totalShares: 4900,
+//       "name": "Centum Investment Company",
+//     },
+//     {
+//       tokenID: "25",
+//       totalShares: 19600,
+//       chain: Chains.AVALANCHE,
+//       "symbol": "LBTY",
+//       "name": "Liberty Kenya Holdings Limited",
+//     },
+//     {
+//       tokenID: "26",
+//       chain: Chains.AVALANCHE,
+//       "symbol": "CARB",
+//       totalShares: 49400,
+//       "name": "Carbacid Investments Limited",
+//     },
+//     {
+//       tokenID: "27",
+//       chain: Chains.AVALANCHE,
+//       "symbol": "CRWN",
+//       totalShares: 248200,
+//       "name": "Crown Paints Kenya Limited",
+//     },
+//     {
+//       tokenID: "28",
+//       totalShares: 300,
+//       chain: Chains.AVALANCHE,
+//       "symbol": "TPSE",
+//       "name": "TPS Eastern Africa Serena Limited",
+//     },
+//     {
+//       tokenID: "29",
+//       "symbol": "WTK",
+//       totalShares: 10300,
+//       chain: Chains.AVALANCHE,
+//       "name": "Williamson Tea Kenya Limited",
+//     },
+//     {
+//       tokenID: "30",
+//       chain: Chains.AVALANCHE,
+//       totalShares: 1700,
+//       "symbol": "SASN",
+//       "name": "Sasini Tea and Coffee Limited",
+//     },
+//     {
+//       tokenID: "31",
+//       "symbol": "PORT",
+//       totalShares: 800,
+//       chain: Chains.AVALANCHE,
+//       "name": "East African Portland Cement Co. Ltd",
+//     },
+//     {
+//       tokenID: "32",
+//       totalShares: 12400,
+//       chain: Chains.AVALANCHE,
+//       "symbol": "NBV",
+//       "name": "Nairobi Business Ventures Ltd",
+//     },
+//     {
+//       tokenID: "33",
+//       "symbol": "HFCK",
+//       totalShares: 23300,
+//       chain: Chains.AVALANCHE,
+//       "name": "HF Group Limited",
+//     },
+//     {
+//       tokenID: "34",
+//       "symbol": "NMG",
+//       totalShares: 12800,
+//       chain: Chains.AVALANCHE,
+//       "name": "Nation Media Group",
+//     },
+//     {
+//       tokenID: "35",
+//       "symbol": "NSE",
+//       totalShares: 305700,
+//       chain: Chains.AVALANCHE,
+//       "name": "Nairobi Securities Exchange Limited",
+//     },
+//     {
+//       tokenID: "36",
+//       chain: Chains.AVALANCHE,
+//       "symbol": "UNGA",
+//       totalShares: 200,
+//       "name": "Unga Group Limited",
+//     },
+//     {
+//       tokenID: "37",
+//       "symbol": "KAPC",
+//       totalShares: 165100,
+//       chain: Chains.AVALANCHE,
+//       "name": "Kapchorua Tea Company Limited",
+//     },
+//     {
+//       tokenID: "38",
+//       chain: Chains.AVALANCHE,
+//       "symbol": "CGEN",
+//       totalShares: 12500,
+//       "name": "Car and General Kenya Limited",
+//     },
+//     {
+//       tokenID: "39",
+//       "symbol": "BOC",
+//       chain: Chains.AVALANCHE,
+//       totalShares: 200,
+//       "name": "BOC Kenya Limited",
+//     },
+//     {
+//       tokenID: "40",
+//       chain: Chains.AVALANCHE,
+//       totalShares: 122800,
+//       "symbol": "TCL",
+//       "name": "Trans Century Limited",
+//     },
+//     {
+//       tokenID: "41",
+//       chain: Chains.AVALANCHE,
+//       "symbol": "SLAM",
+//       "name": "Sanlam Kenya Plc",
+//       totalShares: 4200,
+//     },
+//     {
+//       tokenID: "42",
+//       chain: Chains.AVALANCHE,
+//       "symbol": "SCAN",
+//       "name": "ScanGroup Limited",
+//       totalShares: 1100,
+//     },
+//     {
+//       tokenID: "43",
+//       chain: Chains.AVALANCHE,
+//       totalShares: 500,
+//       "symbol": "SMER",
+//       "name": "Sameer Africa Plc",
+//     },
+//     {
+//       tokenID: "44",
+//       totalShares: 7500,
+//       chain: Chains.AVALANCHE,
+//       "symbol": "LIMT",
+//       "name": "Limuru Tea Company Limited",
+//     },
+//     {
+//       tokenID: "45",
+//       totalShares: 5200,
+//       chain: Chains.AVALANCHE,
+//       "symbol": "LKL",
+//       "name": "Longhorn Publishers Limited",
+//     },
+//     {
+//       tokenID: "46",
+//       chain: Chains.AVALANCHE,
+//       "symbol": "AMAC",
+//       "name": "Africa Mega Agricorp",
+//       totalShares: 248200,
+//     },
+//     {
+//       tokenID: "47",
+//       "symbol": "CABL",
+//       totalShares: 87600,
+//       chain: Chains.AVALANCHE,
+//       "name": "East African Cables Limited",
+//     },
+//     {
+//       tokenID: "48",
+//       chain: Chains.AVALANCHE,
+//       "symbol": "SGL",
+//       "name": "Standard Group Limited",
+//       totalShares: 100,
+//     },
+//     {
+//       tokenID: "49",
+//       totalShares: 2100,
+//       chain: Chains.AVALANCHE,
+//       "symbol": "EGAD",
+//       "name": "Eaagads Limited",
+//     },
+//     {
+//       tokenID: "50",
+//       "symbol": "HAFR",
+//       totalShares: 38700,
+//       chain: Chains.AVALANCHE,
+//       "name": "Home Afrika Limited",
+//     },
+//     {
+//       tokenID: "51",
+//       "symbol": "EVRD",
+//       totalShares: 8300,
+//       chain: Chains.AVALANCHE,
+//       "name": "Eveready East Africa Limited",
+//     },
+//     {
+//       tokenID: "52",
+//       chain: Chains.AVALANCHE,
+//       "symbol": "FTGH",
+//       totalShares: 23900,
+//       "name": "Flame Tree Group Holdings Limited",
+//     },
+//     {
+//       tokenID: "53",
+//       "symbol": "XPRS",
+//       totalShares: 5000,
+//       chain: Chains.AVALANCHE,
+//       "name": "Express Kenya Limited",
+//     },
+//     {
+//       tokenID: "54",
+//       totalShares: 157200,
+//       chain: Chains.AVALANCHE,
+//       "symbol": "UCHM",
+//       "name": "Uchumi Supermarket Limited",
+//     },
+//     {
+//       tokenID: "55",
+//       chain: Chains.AVALANCHE,
+//       "symbol": "OCH",
+//       totalShares: 13600,
+//       "name": "Olympia Capital Holdings Limited",
+//     },
+//     {
+//       tokenID: "56",
+//       chain: Chains.AVALANCHE,
+//       totalShares: 7600,
+//       "symbol": "KURV",
+//       "name": "Kurwitu Ventures Limited",
+//     },
+//     {
+//       tokenID: "57",
+//       "symbol": "GLD",
+//       totalShares: 248200,
+//       chain: Chains.AVALANCHE,
+//       "name": "Absa NewGold ETF",
+//     }
+//   ];  
+
+//   for (const t of tokens) {
+//     await database.createStockInDB(t);
+//     console.log("done", t);
+//   }
+//   process.exit(0);
+// })();

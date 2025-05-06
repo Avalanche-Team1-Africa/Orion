@@ -2,14 +2,12 @@
 import { Errors, MyError } from "@/constants/errors";
 import "../../envConfig";
 import Web3 from "web3";
-import {CONTRACT_ABI, CONTRACT_ADDRESS} from "./abi/constants";
+import { CONTRACT_ABI, CONTRACT_ADDRESS } from "./abi/constants";
 
 import 'dotenv/config'
-interface CreateStockTokenArgs {
-    symbol: string;
-    name: string;
-    totalShares: number;
-}
+import { CardanoToken } from "@/types/token";
+import { mintAsset } from "@/cardano/serializer";
+
 interface BuyTokenArgs {
     tokenId: string;
     userWalletAddress: string;
@@ -23,59 +21,42 @@ export class SmartContract {
     // private privateKey: string;
 
     constructor() {
-        if (!process.env.PRIVATEKEY) {
-            console.error("Set PRIVATEKEY in env");
+        if (!process.env.PRIVATEKEY || !process.env.RPC_URL) {
+            console.error("Set PRIVATEKEY and RPC_URL in env");
             throw new MyError(Errors.INVALID_SETUP);
         }
 
-        this.web3 = new Web3("https://rpc.ankr.com/avalanche_fuji");
-        this.account = this.web3.eth.accounts.wallet.add(process.env.PRIVATEKEY);
+        this.web3 = new Web3(process.env.RPC_URL);
+        const account = this.web3.eth.accounts.privateKeyToAccount(process.env.PRIVATEKEY);
+        this.account = this.web3.eth.accounts.wallet.add(account);
         this.avalancheContract = new this.web3.eth.Contract(CONTRACT_ABI, CONTRACT_ADDRESS);
     }
 
-    async createStock(args: CreateStockTokenArgs): Promise<string> {
-        console.log(args); 
-        // const client: Client = Client.forTestnet();
+    // Creates stock in cardano
+    async createStockOnCardano(args: CardanoToken): Promise<string> {
         try {
-            //     // Your account ID and private key from string value
-            //     const MY_ACCOUNT_ID = AccountId.fromString(this.accountID);
-            //     const MY_PRIVATE_KEY = PrivateKey.fromStringED25519(this.privateKey);
-            //     //Set the operator with the account ID and private key
-            //     client.setOperator(MY_ACCOUNT_ID, MY_PRIVATE_KEY);
-            //     //Create the transaction and freeze for manual signing
-            //     const txTokenCreate = new TokenCreateTransaction()
-            //         .setTokenName(args.name)
-            //         .setTokenSymbol(args.symbol)
-            //         .setTokenType(TokenType.FungibleCommon)
-            //         .setTreasuryAccountId(MY_ACCOUNT_ID)
-            //         .setFreezeDefault(false)
-            //         .setInitialSupply(args.totalShares)
-            //         .freezeWith(client);
-            //     //Sign the transaction with the token treasury account private key
-            //     const signTxTokenCreate = await txTokenCreate.sign(MY_PRIVATE_KEY);
-            //     //Sign the transaction with the client operator private key and submit to a Hedera network
-            //     const txTokenCreateResponse = await signTxTokenCreate.execute(client);
-            //     //Get the receipt of the transaction
-            //     const receiptTokenCreateTx = await txTokenCreateResponse.getReceipt(client);
-            //     //Get the token ID from the receipt
-            //     const tokenId = receiptTokenCreateTx.tokenId!;
-            //     return tokenId.toString()
-            throw new MyError("Not Implemented");
+            const { assetName, supply } = args;
+            const tokenId = await mintAsset(assetName, supply);
+            //linting fix
+            console.log("token id=>", tokenId);
+            return tokenId;
         }
         catch (error) {
-            console.error("Error creating stock token:", error);
+            console.error("Error creating stock token in Cardano:", error);
             throw error;
-        }
-        finally {
-            // if (client) client.close();
         }
     }
 
-    async buyStock(args: BuyTokenArgs): Promise<string> {
+    async buyStockAvalanche(args: BuyTokenArgs): Promise<string> {
         console.log(args);
         try {
+            const amount = BigInt(args.amount);
+            const tokenID = BigInt(Number.parseInt(args.tokenId));
+            
             const txReceipt = await this.avalancheContract.methods.buyShare(
-
+                tokenID,
+                amount,
+                args.userWalletAddress
             ).send({
                 from: this.account[0].address,
                 gas: "1000000",

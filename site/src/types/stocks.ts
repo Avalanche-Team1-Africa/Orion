@@ -4,7 +4,6 @@ export const CreateStockTokenSchema = z.object({
     symbol: z.string(),
     name: z.string(),
     totalShares: z.number().int().nonnegative(),
-    sharePrice: z.number().nonnegative(),
 });
 export const BuyTokenSchema = z.object({
     tokenId: z.string(),
