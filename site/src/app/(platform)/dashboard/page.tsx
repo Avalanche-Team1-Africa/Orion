@@ -55,7 +55,6 @@ import {
 import updateUserStockHoldings from "@/server-actions/stocks/update_stock_holdings";
 import { useAccount, useWriteContract /*useConnectorClient*/ } from "wagmi";
 import { CONTRACT_ABI, CONTRACT_ADDRESS } from "@/contract/abi/constants";
-import { parseEther } from "viem";
 import transferAVAX from "@/server-actions/sell/transfer_avax";
 
 interface StockHoldings {
