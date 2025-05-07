@@ -11,7 +11,8 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { AdminKeyBoardShortcut } from "@/components/admin-shortcut";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-
+import { MeshProvider } from "@meshsdk/react";
+import { CardanoProvider } from "@/context/cardano";
 const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta-sans",
   subsets: ["vietnamese"],
@@ -36,14 +37,15 @@ export default async function RootLayout({
       <html lang="en">
         <body className={`${plusJakartaSans.className} antialiased`}>
           <TanstackProvider>
-            <AppKitProvider cookies={cookies}>
-              {/* <ReactWalletsProvider>*/}
-              <Navbar />
-              {children}
-              <AdminKeyBoardShortcut />
-              <Analytics />
-              <SpeedInsights />
-            </AppKitProvider>
+            <CardanoProvider>
+              <AppKitProvider cookies={cookies}>
+                <Navbar />
+                {children}
+                <AdminKeyBoardShortcut />
+                <Analytics />
+                <SpeedInsights />
+              </AppKitProvider>
+            </CardanoProvider>
           </TanstackProvider>
           <Toaster richColors />
         </body>
