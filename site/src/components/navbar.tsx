@@ -3,7 +3,7 @@ import { WalletButton } from "@/components/appkit-wallet-button";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
-import { CardanoWalletButton } from "./cardano-wallet-button";
+import { CustomCardanoWallet } from "./custom-cardano-wallet";
 export function Navbar() {
   const pathname = usePathname();
   const isHomePage = pathname === "/";
@@ -27,7 +27,7 @@ export function Navbar() {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <CardanoWalletButton />
+          <CustomCardanoWallet />
           <WalletButton />
         </div>
       </div>

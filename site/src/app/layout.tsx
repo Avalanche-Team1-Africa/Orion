@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { Toaster } from "sonner";
 import { headers } from "next/headers";
-import "@meshsdk/react/styles.css";
+// import "@meshsdk/react/styles.css";
 import "./globals.css";
 import AppKitProvider from "@/context/appkit";
 import { Navbar } from "@/components/navbar";
