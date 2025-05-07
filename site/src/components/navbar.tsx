@@ -1,8 +1,9 @@
 "use client";
-import { WalletButton } from "@/components/wallet-button";
+import { WalletButton } from "@/components/appkit-wallet-button";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
+// import { CardanoWalletButton } from "./cardano-wallet-button";
 export function Navbar() {
   const pathname = usePathname();
   const isHomePage = pathname === "/";
@@ -25,7 +26,9 @@ export function Navbar() {
             <div className=" text-xl font-semibold">ORION</div>
           </div>
         </div>
-        <WalletButton />
+        <div className="flex items-center gap-4">
+          <WalletButton />
+        </div>
       </div>
     </header>
   );
