@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { Toaster } from "sonner";
 import { headers } from "next/headers";
+import "@meshsdk/react/styles.css";
 import "./globals.css";
 import AppKitProvider from "@/context/appkit";
 import { Navbar } from "@/components/navbar";
@@ -11,7 +12,6 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { AdminKeyBoardShortcut } from "@/components/admin-shortcut";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import { MeshProvider } from "@meshsdk/react";
 import { CardanoProvider } from "@/context/cardano";
 const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta-sans",
