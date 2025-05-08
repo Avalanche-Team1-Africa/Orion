@@ -176,9 +176,7 @@ export const CustomCardanoWallet = () => {
     return (
       <Button
         variant="outline"
-        size="sm"
         disabled
-        title="Cardano wallet services unavailable (missing configuration)"
         className="ml-4 flex items-center gap-2"
       >
         <AlertCircle className="h-4 w-4" />
@@ -191,7 +189,6 @@ export const CustomCardanoWallet = () => {
     return (
       <Button
         variant="outline"
-        size="sm"
         onClick={handleDisconnect}
         className="ml-4 transition-all duration-200"
       >
@@ -220,41 +217,41 @@ export const CustomCardanoWallet = () => {
       <PopoverTrigger asChild>
         <Button
           variant="outline"
-          size="sm"
-          className="ml-4 transition-all duration-200"
+          className="ml-4  flex items-center transition-all duration-200"
         >
-          <Wallet className="mr-2 h-4 w-4" /> Connect Cardano Wallet
+          <Wallet className="h-5 w-5 mb-1" />
+          <span>Connect Cardano Wallet</span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-0">
+      <PopoverContent className="w-[450px] p-0 rounded-full shadow-lg">
         <Card className="border-0 shadow-none">
-          <CardHeader className="px-4 pt-4 pb-2">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Wallet className="h-5 w-5" /> Connect Wallet
+          <CardHeader className="px-4 py-2 ">
+            <CardTitle className="flex  items-center gap-3 text-xl">
+              Connect Your Wallet
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-xs">
               Select a Cardano wallet to connect
             </CardDescription>
           </CardHeader>
           <Separator />
-          <CardContent className="px-4 pt-4">
-            <ScrollArea className="h-64 pr-4">
+          <CardContent className="px-6 pt-6 pb-4">
+            <ScrollArea className="h-auto max-h-[350px]">
               {noWalletsDetected ? (
-                <div className="text-center p-4">
-                  <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
-                  <p className="text-sm font-medium">
+                <div className="text-center p-6 bg-slate-50 rounded-xl">
+                  <AlertCircle className="h-14 w-14 mx-auto text-muted-foreground mb-3" />
+                  <p className="text-base font-medium">
                     No Cardano wallets detected
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-xs text-muted-foreground mt-2">
                     Please install a Cardano wallet extension to continue
                   </p>
                   <Button
-                    variant="outline"
+                    variant="link"
                     size="sm"
-                    className="mt-4 w-full"
+                    className="mt-5 w-full rounded-lg h-10"
                     onClick={() =>
                       window.open(
-                        "https://docs.cardano.org/wallets/browser-wallets/",
+                        "https://docs.cardano.org/about-cardano/new-to-cardano/types-of-wallets",
                         "_blank",
                       )
                     }
@@ -263,43 +260,57 @@ export const CustomCardanoWallet = () => {
                   </Button>
                 </div>
               ) : (
-                <div className="flex flex-col space-y-2">
+                <div className="flex flex-wrap gap-6 ">
                   {availableWallets.map((walletOption) => (
-                    <Button
+                    <button
                       key={walletOption.id}
-                      variant="outline"
-                      className="justify-between transition-all duration-200 h-10"
-                      size="lg"
                       disabled={isConnecting}
                       onClick={() => handleConnect(walletOption.id)}
+                      className={`
+                        w-[100px] h-[100px] p-3 rounded-2xl border border-input
+                        flex flex-col items-center justify-center gap-2
+                        transition-all duration-200
+                        ${connectingWalletId === walletOption.id
+                          ? "bg-primary/10 border-primary"
+                          : "bg-slate-50 hover:bg-slate-100 border-slate-200 hover:border-primary/50"
+                        }
+                        focus:outline-none 
+                      `}
                     >
-                      <div className="flex items-center">
+                      <div
+                        className={`
+                        w-12 h-12 rounded-xl flex items-center justify-center
+                        ${connectingWalletId === walletOption.id ? "bg-primary/20" : "bg-white"}
+                      `}
+                      >
                         {walletOption.icon ? (
                           <img
                             src={walletOption.icon}
                             alt={`${walletOption.name} icon`}
-                            className="mr-2 h-4 w-4"
+                            className="h-8 w-8 object-contain"
                           />
                         ) : (
-                          <Wallet className="mr-2 h-4 w-4" />
+                          <Wallet className="h-7 w-7 text-primary" />
                         )}
-                        <span>{walletOption.name}</span>
                       </div>
+                      <span className="text-xs font-medium text-center">
+                        {walletOption.name}
+                      </span>
                       {connectingWalletId === walletOption.id && (
-                        <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                        <Loader2 className="h-4 w-4 animate-spin text-primary absolute bottom-2" />
                       )}
-                    </Button>
+                    </button>
                   ))}
                 </div>
               )}
             </ScrollArea>
           </CardContent>
-          <CardFooter className="px-4 py-3 flex justify-between border-t">
+          <CardFooter className="px-6 py-4 flex justify-between border-t bg-slate-50">
             <Button
               variant="ghost"
               size="sm"
               onClick={handleCancel}
-              className="text-xs"
+              className="text-xs font-medium"
             >
               Cancel
             </Button>
