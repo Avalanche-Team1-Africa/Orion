@@ -33,6 +33,8 @@ export const CustomCardanoWallet = () => {
   >([]);
   const [noWalletsDetected, setNoWalletsDetected] = useState(false);
 
+  const [isConnecting, setIsConnecting] = useState(false);
+
   const projectId = process.env.NEXT_PUBLIC_BLOCKFROST_PROJECT_ID_PREPROD;
 
   const provider = useMemo(() => {
@@ -52,22 +54,21 @@ export const CustomCardanoWallet = () => {
     connect,
     error: walletError,
     name: connectedWalletName,
-    connecting,
   } = useWallet();
 
   const prevConnectedRef = useRef(false);
 
-  // Detect available wallets
+  // detects available wallets
   useEffect(() => {
     const detectWallets = async () => {
       try {
-        // Get all available wallets
+        // gets all available wallets
         const wallets = BrowserWallet.getInstalledWallets();
 
         if (wallets.length === 0) {
           setNoWalletsDetected(true);
         } else {
-          // Format wallets for display
+          // formats wallets for display
           const formattedWallets = wallets.map((wallet) => ({
             id: wallet.name.toLowerCase(),
             name: wallet.name,
@@ -86,11 +87,20 @@ export const CustomCardanoWallet = () => {
     detectWallets();
   }, []);
 
+  // resets connecting state when popover closes
+  useEffect(() => {
+    if (!open) {
+      setConnectingWalletId(null);
+      setIsConnecting(false);
+    }
+  }, [open]);
+
   useEffect(() => {
     if (connected && !prevConnectedRef.current && wallet) {
       toast.success(`${connectedWalletName || "Cardano wallet"} connected!`);
       setOpen(false);
       setConnectingWalletId(null);
+      setIsConnecting(false);
     }
     if (!connected && prevConnectedRef.current) {
       toast.info("Cardano wallet disconnected.");
@@ -98,8 +108,12 @@ export const CustomCardanoWallet = () => {
     prevConnectedRef.current = connected;
   }, [connected, wallet, connectedWalletName]);
 
+  // handles connection errors and reset states
   useEffect(() => {
     if (walletError) {
+      setConnectingWalletId(null);
+      setIsConnecting(false);
+
       let message = `Cardano Wallet Error: ${walletError}`;
 
       if (
@@ -127,12 +141,19 @@ export const CustomCardanoWallet = () => {
   const handleConnect = async (walletId: string) => {
     try {
       setConnectingWalletId(walletId);
+      setIsConnecting(true);
       await connect(walletId);
     } catch (error) {
       toast.error(`Failed to connect to ${walletId}`);
       console.error(error);
-    } finally {
       setConnectingWalletId(null);
+      setIsConnecting(false);
+    } finally {
+      // If the connection process completes without success or explicit error,
+      // ensure UI doesn't get stuck by resetting states here as a safety measure
+      if (!connected) {
+        setIsConnecting(false);
+      }
     }
   };
 
@@ -146,11 +167,8 @@ export const CustomCardanoWallet = () => {
   };
 
   const handleCancel = () => {
-    // Stop any ongoing connection attempts
-    if (connectingWalletId) {
-      // No direct way to abort connection in MeshSDK, but we reset the UI state
-      setConnectingWalletId(null);
-    }
+    setConnectingWalletId(null);
+    setIsConnecting(false);
     setOpen(false);
   };
 
@@ -189,7 +207,16 @@ export const CustomCardanoWallet = () => {
   }
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={open}
+      onOpenChange={(openState) => {
+        if (!openState) {
+          handleCancel();
+        } else {
+          setOpen(openState);
+        }
+      }}
+    >
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -243,7 +270,7 @@ export const CustomCardanoWallet = () => {
                       variant="outline"
                       className="justify-between transition-all duration-200 h-10"
                       size="lg"
-                      disabled={connecting}
+                      disabled={isConnecting}
                       onClick={() => handleConnect(walletOption.id)}
                     >
                       <div className="flex items-center">
@@ -277,7 +304,7 @@ export const CustomCardanoWallet = () => {
               Cancel
             </Button>
             <a
-              href="https://docs.cardano.org/wallets/browser-wallets/"
+              href="https://docs.cardano.org/about-cardano/new-to-cardano/types-of-wallets"
               target="_blank"
               rel="noopener noreferrer"
               className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
