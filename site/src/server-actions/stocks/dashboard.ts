@@ -150,9 +150,10 @@ interface StockHoldings {
   symbol: string;
   name: string;
   shares: number;
-  buy_price: number;
+  buy_price_perShare: number;
   current_price: number;
   profit: number;
+  total_value_bought: number;
 }
 
 export async function getStockHoldings(
@@ -188,9 +189,10 @@ export async function getStockHoldings(
             tokenId: stock.tokenId,
             shares: stock.number_stocks,
             symbol: stock.symbol,
-            buy_price: buyingPrice / stock.number_stocks,
+            buy_price_perShare: buyingPrice / stock.number_stocks,
             name: stock.name,
             current_price: currentprice,
+            total_value_bought: buyingPrice,
             profit,
           });
         }
