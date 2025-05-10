@@ -29,7 +29,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ArrowUp, ArrowDown, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { useAccountId, useWallet } from "@buidlerlabs/hashgraph-react-wallets";
+// import { useAccountId, useWallet } from "@buidlerlabs/hashgraph-react-wallets";
+import { useWallet } from "@meshsdk/react";
 import { TransferTransaction } from "@hashgraph/sdk";
 import { transferHbar } from "@/server-actions/contracts/transfer_hbar";
 import updateUserStockHoldings from "@/server-actions/stocks/update_stock_holdings";
@@ -46,7 +47,7 @@ interface AssetHoldingsProps {
 
 export const AssetHoldings = ({ portfolio, userAddress, onUpdate }: AssetHoldingsProps) => {
   const { signer } = useWallet();
-  const { data: accountId } = useAccountId();
+  //const { data: accountId } = useAccountId();
   const [selectedStock, setSelectedStock] = useState<StockHoldings | null>(null);
   const [sellQuantity, setSellQuantity] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState("mobile");
@@ -154,9 +155,9 @@ export const AssetHoldings = ({ portfolio, userAddress, onUpdate }: AssetHolding
           </TableHeader>
           <TableBody>
             {portfolio.map((stock) => {
-              const buyPricePerShare = stock.buy_price / stock.shares;
+              const buyPricePerShare = stock.buy_price_perShare / stock.shares;
               const currentPricePerShare = stock.current_price / stock.shares;
-              const profitPercent = (stock.profit / stock.buy_price) * 100;
+              const profitPercent = (stock.profit / stock.buy_price_perShare) * 100;
 
               return (
                 <TableRow key={stock.symbol}>

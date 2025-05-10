@@ -22,14 +22,15 @@ import {
   getTotalPortfolioValue,
   getInitialInvestment,
 } from "@/server-actions/stocks/dashboard";
-import { useAccountId, useWallet } from "@buidlerlabs/hashgraph-react-wallets";
+// import { useAccountId, useWallet } from "@buidlerlabs/hashgraph-react-wallets";
+import { useWallet } from "@meshsdk/react";
 import { PortfolioPerformance } from "./components/portfolio-performance";
 import { AssetHoldings } from "./components/asset-holdings";
 import { StockHoldings } from "./components/types";
 
 const DashBoardPage = () => {
-  const { isConnected } = useWallet();
-  const { data: address } = useAccountId();
+  const { connected } = useWallet();
+  const { address } = useWallet();
   const [portfolio, setPortfolio] = useState<StockHoldings[]>([]);
   const [totalInvested, setTotalInvested] = useState(0);
   const [currentValue, setCurrentValue] = useState(0);
@@ -78,16 +79,16 @@ const DashBoardPage = () => {
   }, [address]);
 
   useEffect(() => {
-    if (isConnected && address) {
+    if (connected && address) {
       fetchPortfolioData();
     }
-  }, [isConnected, address, fetchPortfolioData]);
+  }, [connected, address, fetchPortfolioData]);
 
   const totalProfit = currentValue - totalInvested;
   const profitPercentage =
     totalInvested !== 0 ? (totalProfit / totalInvested) * 100 : 0;
 
-  if (!isConnected) {
+  if (!connected) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
         <Wallet className="h-12 w-12 mb-4 text-gray-400" />
