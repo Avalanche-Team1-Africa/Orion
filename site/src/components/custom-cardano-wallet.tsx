@@ -101,7 +101,7 @@ export const CustomCardanoWallet = () => {
         walletError !== null &&
         "message" in walletError
       ) {
-        message = `Error: ${(walletError as any).message || walletError.toString()}`;
+        message = `Error: ${walletError.message || walletError.toString()}`;
       } else if (typeof walletError === "string") {
         message = `Error: ${walletError}`;
       }
