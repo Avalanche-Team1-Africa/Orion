@@ -12,6 +12,7 @@ import { AdminKeyBoardShortcut } from "@/components/admin-shortcut";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { CardanoProvider } from "@/context/cardano";
+import { WalletConnectionProvider } from "@/context/wallet-connection-manager";
 const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta-sans",
   subsets: ["vietnamese"],
@@ -38,8 +39,10 @@ export default async function RootLayout({
           <TanstackProvider>
             <CardanoProvider>
               <AppKitProvider cookies={cookies}>
-                <Navbar />
-                {children}
+                <WalletConnectionProvider>
+                  <Navbar />
+                  {children}
+                </WalletConnectionProvider>
                 <AdminKeyBoardShortcut />
                 <Analytics />
                 <SpeedInsights />
