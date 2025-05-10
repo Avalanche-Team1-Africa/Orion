@@ -4,7 +4,7 @@ import { useWallet } from "@meshsdk/react";
 import { BlockfrostProvider, BrowserWallet } from "@meshsdk/core";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { useEffect, useRef, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -45,14 +45,12 @@ export const CustomCardanoWallet = () => {
 
   const {
     connected,
-    wallet,
     disconnect,
     connect,
     error: walletError,
     name: connectedWalletName,
   } = useWallet();
   const { isConnectionAllowed } = useWalletConnection();
-  const prevConnectedRef = useRef(false);
 
   // detects available wallets
   useEffect(() => {
@@ -90,20 +88,6 @@ export const CustomCardanoWallet = () => {
       setIsConnecting(false);
     }
   }, [open]);
-
-  useEffect(() => {
-    if (connected && !prevConnectedRef.current && wallet) {
-      toast.success(`${connectedWalletName || "Cardano wallet"} connected!`);
-      setOpen(false);
-      setConnectingWalletId(null);
-      setIsConnecting(false);
-    }
-    if (!connected && prevConnectedRef.current) {
-      toast.info("Cardano wallet disconnected.");
-    }
-    prevConnectedRef.current = connected;
-  }, [connected, wallet, connectedWalletName]);
-
   // handles connection errors and reset states
   useEffect(() => {
     if (walletError) {
@@ -144,6 +128,7 @@ export const CustomCardanoWallet = () => {
       setConnectingWalletId(walletId);
       setIsConnecting(true);
       await connect(walletId);
+      toast.success("wallet connected");
     } catch (error) {
       toast.error(`Failed to connect to ${walletId}`);
       console.error(error);
@@ -161,6 +146,7 @@ export const CustomCardanoWallet = () => {
   const handleDisconnect = () => {
     try {
       disconnect();
+      toast.info("wallet disconnected");
     } catch (error) {
       toast.error("Failed to disconnect Cardano wallet");
       console.error(error);
@@ -178,7 +164,7 @@ export const CustomCardanoWallet = () => {
       <Button
         variant="destructive"
         disabled
-        className="ml-4 flex items-center gap-2"
+        className=" flex items-center gap-2"
       >
         <AlertCircle className="h-4 w-4" />
         Configuration Missing
@@ -191,7 +177,7 @@ export const CustomCardanoWallet = () => {
       <Button
         variant="outline"
         onClick={handleDisconnect}
-        className="ml-4 transition-all focus:outline-none duration-200"
+        className=" flex items-center  transition-all focus:outline-none duration-200"
       >
         <CheckCircle2 className="mr-2 h-4 w-4" />
         <span className="flex items-center gap-1.5">
@@ -209,10 +195,10 @@ export const CustomCardanoWallet = () => {
       <Button
         variant="outline"
         onClick={() => setOpen(true)}
-        className="ml-4 flex items-center transition-all duration-200"
+        className=" flex items-center transition-all duration-200"
       >
         <Wallet className="h-5 w-5 mb-1 mr-2" />
-        <span>Connect Cardano Wallet</span>
+        <span>Connect Wallet</span>
       </Button>
 
       <Dialog
