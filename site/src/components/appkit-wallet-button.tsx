@@ -2,20 +2,19 @@
 import {
   useDisconnect,
   useAppKit,
-  // useAppKitNetwork,
   useAppKitAccount,
 } from "@reown/appkit/react";
 import { Button } from "./ui/button";
-// import { networks } from "@/config";
 import { toast } from "sonner";
 import { IconWallet } from "@tabler/icons-react";
 import { useEffect, useRef } from "react";
+import { useWalletConnection } from "@/context/wallet-connection-manager";
 
 export const WalletButton = () => {
   const { disconnect } = useDisconnect();
   const { open } = useAppKit();
-  // const { switchNetwork } = useAppKitNetwork();
   const { isConnected } = useAppKitAccount();
+  const { isConnectionAllowed } = useWalletConnection();
   const prevConnectedRef = useRef(false);
 
   // Effect to detect when connection state changes from false to true
@@ -27,6 +26,11 @@ export const WalletButton = () => {
   }, [isConnected]);
 
   const handleConnect = () => {
+    // Check if this connection attempt is allowed
+    if (!isConnectionAllowed("avalanche")) {
+      return;
+    }
+
     open();
   };
 

@@ -22,7 +22,7 @@ import { Wallet, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-
+import { useWalletConnection } from "@/context/wallet-connection-manager";
 export const CustomCardanoWallet = () => {
   const [open, setOpen] = useState(false);
   const [connectingWalletId, setConnectingWalletId] = useState<string | null>(
@@ -55,7 +55,7 @@ export const CustomCardanoWallet = () => {
     error: walletError,
     name: connectedWalletName,
   } = useWallet();
-
+  const { isConnectionAllowed } = useWalletConnection();
   const prevConnectedRef = useRef(false);
 
   // detects available wallets
@@ -139,6 +139,11 @@ export const CustomCardanoWallet = () => {
   }, [walletError]);
 
   const handleConnect = async (walletId: string) => {
+    // check if connection should even be allowed
+    if (!isConnectionAllowed("cardano")) {
+      return;
+    }
+
     try {
       setConnectingWalletId(walletId);
       setIsConnecting(true);
