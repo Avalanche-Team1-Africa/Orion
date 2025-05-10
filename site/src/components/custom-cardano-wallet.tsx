@@ -49,9 +49,9 @@ export const CustomCardanoWallet = () => {
     connect,
     error: walletError,
     name: connectedWalletName,
+    setWeb3Services,
   } = useWallet();
   const { isConnectionAllowed } = useWalletConnection();
-
   // detects available wallets
   useEffect(() => {
     const detectWallets = async () => {
@@ -127,7 +127,13 @@ export const CustomCardanoWallet = () => {
     try {
       setConnectingWalletId(walletId);
       setIsConnecting(true);
-      await connect(walletId);
+
+      setWeb3Services({
+        networkId: 0,
+        fetcher: provider,
+        submitter: provider,
+      });
+      await connect(walletId, true);
       toast.success("wallet connected");
     } catch (error) {
       toast.error(`Failed to connect to ${walletId}`);
