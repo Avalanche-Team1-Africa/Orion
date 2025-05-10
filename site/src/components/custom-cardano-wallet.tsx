@@ -127,6 +127,7 @@ export const CustomCardanoWallet = () => {
     try {
       setConnectingWalletId(walletId);
       setIsConnecting(true);
+
       await connect(walletId);
       toast.success("wallet connected");
     } catch (error) {
