@@ -6,23 +6,19 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useEffect, useRef, useMemo, useState } from "react";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Wallet, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { useWalletConnection } from "@/context/wallet-connection-manager";
+
 export const CustomCardanoWallet = () => {
   const [open, setOpen] = useState(false);
   const [connectingWalletId, setConnectingWalletId] = useState<string | null>(
@@ -87,7 +83,7 @@ export const CustomCardanoWallet = () => {
     detectWallets();
   }, []);
 
-  // resets connecting state when popover closes
+  // resets connecting state when dialog closes
   useEffect(() => {
     if (!open) {
       setConnectingWalletId(null);
@@ -154,7 +150,7 @@ export const CustomCardanoWallet = () => {
       setConnectingWalletId(null);
       setIsConnecting(false);
     } finally {
-      // If the connection process completes without success or explicit error,
+      // if the connection process completes without success or explicit error,
       // ensure UI doesn't get stuck by resetting states here as a safety measure
       if (!connected) {
         setIsConnecting(false);
@@ -180,12 +176,12 @@ export const CustomCardanoWallet = () => {
   if (!provider) {
     return (
       <Button
-        variant="outline"
+        variant="destructive"
         disabled
         className="ml-4 flex items-center gap-2"
       >
         <AlertCircle className="h-4 w-4" />
-        <span>Configuration Missing</span>
+        Configuration Missing
       </Button>
     );
   }
@@ -195,7 +191,7 @@ export const CustomCardanoWallet = () => {
       <Button
         variant="outline"
         onClick={handleDisconnect}
-        className="ml-4 transition-all duration-200"
+        className="ml-4 transition-all focus:outline-none duration-200"
       >
         <CheckCircle2 className="mr-2 h-4 w-4" />
         <span className="flex items-center gap-1.5">
@@ -209,37 +205,36 @@ export const CustomCardanoWallet = () => {
   }
 
   return (
-    <Popover
-      open={open}
-      onOpenChange={(openState) => {
-        if (!openState) {
-          handleCancel();
-        } else {
-          setOpen(openState);
-        }
-      }}
-    >
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          className="ml-4  flex items-center transition-all duration-200"
-        >
-          <Wallet className="h-5 w-5 mb-1" />
-          <span>Connect Cardano Wallet</span>
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[450px] p-0 rounded-full shadow-lg">
-        <Card className="border-0 shadow-none">
-          <CardHeader className="px-6  ">
-            <CardTitle className="flex  items-center gap-3 text-xl">
-              Connect Your Wallet
-            </CardTitle>
-            <CardDescription className="text-xs">
+    <>
+      <Button
+        variant="outline"
+        onClick={() => setOpen(true)}
+        className="ml-4 flex items-center transition-all duration-200"
+      >
+        <Wallet className="h-5 w-5 mb-1 mr-2" />
+        <span>Connect Cardano Wallet</span>
+      </Button>
+
+      <Dialog
+        open={open}
+        onOpenChange={(openState) => {
+          if (!openState) {
+            handleCancel();
+          } else {
+            setOpen(openState);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Connect Your Wallet</DialogTitle>
+            <DialogDescription className="text-xs">
               Select a Cardano wallet to connect
-            </CardDescription>
-          </CardHeader>
+            </DialogDescription>
+          </DialogHeader>
           <Separator />
-          <CardContent className="px-6 pt-2 pb-4">
+
+          <div className="py-4">
             <ScrollArea className="h-auto max-h-[350px]">
               {noWalletsDetected ? (
                 <div className="text-center p-6 bg-slate-50 rounded-xl">
@@ -298,7 +293,7 @@ export const CustomCardanoWallet = () => {
                           <Wallet className="h-7 w-7 text-primary" />
                         )}
                       </div>
-                      <div className="flex items-center transition-all  gap-1">
+                      <div className="flex items-center transition-all gap-1">
                         {connectingWalletId === walletOption.id && (
                           <Loader2 className="h-3 w-3 animate-spin text-primary" />
                         )}
@@ -311,13 +306,14 @@ export const CustomCardanoWallet = () => {
                 </div>
               )}
             </ScrollArea>
-          </CardContent>
-          <CardFooter className="px-4 py-4 flex justify-between border-t ">
+          </div>
+
+          <DialogFooter className="flex justify-between border-t pt-4">
             <Button
               variant="ghost"
               size="sm"
               onClick={handleCancel}
-              className="text-xs font-medium"
+              className="text-xs font-medium focus:outline-none"
             >
               Cancel
             </Button>
@@ -329,9 +325,9 @@ export const CustomCardanoWallet = () => {
             >
               Learn more
             </a>
-          </CardFooter>
-        </Card>
-      </PopoverContent>
-    </Popover>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
