@@ -26,9 +26,11 @@ import { store_stock_purchase } from "@/server-actions/buy/stock_holdings";
 import { usePaystack } from "@/hooks/use-paystack";
 import { makePaymentRequest } from "@/server-actions/paystack/makePaymentRequest";
 import { Errors } from "@/constants/errors";
-import sendTokensToUser from "@/server-actions/contracts/send_token_user";
+import {sendTokensToUser, sendTokensToUserCardano} from "@/server-actions/contracts/send_token_user";
 import updateUserStockHoldings from "@/server-actions/stocks/update_stock_holdings";
 import { useEffect } from "react";
+import { useWalletConnection } from "@/context/wallet-connection-manager";
+import { useWallet as useCardanoWallet } from "@meshsdk/react";
 
 // Defines the form value type from the schema
 const paymentSchema = z.object({
@@ -59,8 +61,10 @@ export function BuyStocksForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tokenAmount, setTokenAmount] = useState("0");
 
-  const { isConnected, address } = useAppKitAccount();
+  const { address } = useAppKitAccount();
+  const { address: cardanoAddress } = useCardanoWallet();
   const { isReady: paystackReady, initiatePayment } = usePaystack();
+  const { activeWallet } = useWalletConnection();
 
   // Initialize the form
   const form = useForm<FormValues>({
@@ -86,7 +90,7 @@ export function BuyStocksForm({
   const onSubmit = async (data: FormValues) => {
     const finalAmount = Math.ceil(entry.price * quantity); // Calculate amount dynamically
     data.amount = finalAmount;
-    if (!address || !isConnected) {
+    if (activeWallet === null) {
       toast.warning("you need to connect your wallet in order to proceed");
       return;
     }
@@ -130,30 +134,64 @@ export function BuyStocksForm({
           try {
 
             //store the stock purchase using the reference
+            let user_wallet;
+            if (activeWallet === "avalanche") {
+              if (!address) {
+                toast.warning("Connect your avalanche wallet");
+                return;
+              }
+
+              user_wallet = address;
+            } else if (activeWallet === "cardano") {
+              if (!cardanoAddress) {
+                toast.warning("Connect your cardano wallet");
+                return;
+              }
+
+              user_wallet = cardanoAddress;
+            } else {
+              toast.warning("Unsupported wallet");
+              return;
+            }
+
+
             await store_stock_purchase({
               stock_symbol: data.stock_symbol,
               name: entry.name,
               amount_shares: quantity,
               buy_price: finalAmount,
               paystack_id: transaction.reference,
-              user_wallet: address,
+              user_wallet,
               purchase_date: new Date(),
               transaction_type: "buy",
             });
 
             console.log("Sending tokens to user");
-            
-            // Send tokens to user
-            await sendTokensToUser({
-              tokenId: entry.tokenID,
-              amount: quantity,
-              userWalletAddress: address,
-            });
+
+            if (activeWallet === "avalanche") {
+
+              // Send tokens to user
+              await sendTokensToUser({
+                tokenId: entry.tokenID,
+                amount: quantity,
+                userWalletAddress: user_wallet,
+              });
+            } else if (activeWallet === "cardano") {
+
+              await sendTokensToUserCardano({
+                receiverAddress: user_wallet,
+                tokenId: entry.tokenID,
+                amount: quantity
+              });
+            } else {
+              toast.warning("Unsupported wallet");
+              return;
+            }
 
             console.log("Updating user stock holdings");
             await updateUserStockHoldings({
               stock_symbol: data.stock_symbol,
-              user_address: address,
+              user_address: user_wallet,
               stock_name: entry.name,
               number_stock: quantity,
               tokenId: entry.tokenID,
@@ -182,7 +220,7 @@ export function BuyStocksForm({
             setIsSubmitting(false);
           }
         },
-        onClose: function() {
+        onClose: function () {
           toast.info("Payment cancelled or window closed");
           setIsSubmitting(false);
         },

@@ -19,6 +19,12 @@ interface GetStocks {
   name: string;
   tokenID: string;
   symbol: string;
+  chain: string;
+}
+
+export interface GetStocksArgs {
+  chain?: string,
+  symbol?: string
 }
 
 interface UpdateStockAmount {
@@ -72,7 +78,7 @@ export class MyDatabase {
       const stocks: GetStocks[] = [];
       const cursor = STOCKS_COLLECTION.find(
         {},
-        { projection: { id: 1, name: 1, symbol: 1, tokenID: 1 } },
+        { projection: { id: 1, name: 1, symbol: 1, tokenID: 1, chain: 1 } },
       );
       for await (const doc of cursor) {
         stocks.push({
@@ -80,6 +86,7 @@ export class MyDatabase {
           name: doc.name,
           tokenID: doc.tokenID,
           symbol: doc.symbol,
+          chain: doc.chain
         });
       }
       return stocks;
