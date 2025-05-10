@@ -1,10 +1,8 @@
 "use client";
-import { WalletButton } from "@/components/appkit-wallet-button";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
-import { CustomCardanoWallet } from "./custom-cardano-wallet";
-import { WalletStatus } from "./wallet-status";
+import { WalletPopover } from "./wallet-popover";
 export function Navbar() {
   const pathname = usePathname();
   const isHomePage = pathname === "/";
@@ -27,11 +25,7 @@ export function Navbar() {
             <div className=" text-xl font-semibold">ORION</div>
           </div>
         </div>
-        <div className="flex items-center gap-4">
-          <CustomCardanoWallet />
-          <WalletButton />
-          <WalletStatus />
-        </div>
+        <WalletPopover />
       </div>
     </header>
   );
