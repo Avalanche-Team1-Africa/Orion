@@ -4,6 +4,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { CustomCardanoWallet } from "./custom-cardano-wallet";
+import { WalletStatus } from "./wallet-status";
 export function Navbar() {
   const pathname = usePathname();
   const isHomePage = pathname === "/";
@@ -29,6 +30,7 @@ export function Navbar() {
         <div className="flex items-center gap-4">
           <CustomCardanoWallet />
           <WalletButton />
+          <WalletStatus />
         </div>
       </div>
     </header>
