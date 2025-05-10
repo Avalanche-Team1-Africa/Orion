@@ -22,10 +22,11 @@ import { WalletButton } from "./appkit-wallet-button";
 import { CustomCardanoWallet } from "./custom-cardano-wallet";
 import { Separator } from "./ui/separator";
 import { toast } from "sonner";
+import { useEffect } from "react";
 import { useWalletConnection } from "@/context/wallet-connection-manager";
 export const WalletPopover = () => {
   const [open, setOpen] = useState(false);
-  const { name: cardanoWalletName } = useCardanoWallet();
+  const { name: cardanoWalletName, connect, connected } = useCardanoWallet();
   const { address: avalancheAddress } = useAppKitAccount();
   const { activeWallet, isWalletConnected } = useWalletConnection();
 
@@ -47,6 +48,18 @@ export const WalletPopover = () => {
     if (activeWallet === "avalanche") return "Avalanche";
     return "Wallet";
   };
+  //TODO: CLEAN THIS UP
+  useEffect(() => {
+    const last = window.localStorage.getItem("mesh-wallet-persist");
+    if (last && !connected) {
+      const content = JSON.parse(last);
+      //reconnect and keep it persisted:
+      connect(content.walletName, true).catch(() => {
+        /* maybe wallet was removed, clear storage */
+        window.localStorage.removeItem("mesh-wallet-persist");
+      });
+    }
+  }, [connected, connect]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
