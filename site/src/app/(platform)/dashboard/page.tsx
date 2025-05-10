@@ -1,235 +1,66 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import getGraphData from "@/server-actions/dashboard/graph";
-import { sendNotification } from "@/server-actions/sell/notify";
-import { GraphDataMode } from "@/constants/types";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import {
-  Loader2,
   Wallet,
   BarChart3,
   DollarSign,
   ArrowUp,
   ArrowDown,
+  Copy,
+  Check
 } from "lucide-react";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
-import { toast } from "sonner";
 import {
   getStockHoldings,
   getTotalPortfolioValue,
   getInitialInvestment,
 } from "@/server-actions/stocks/dashboard";
-import updateUserStockHoldings from "@/server-actions/stocks/update_stock_holdings";
-import { useAccount, useWriteContract /*useConnectorClient*/ } from "wagmi";
-import { CONTRACT_ABI, CONTRACT_ADDRESS } from "@/contract/abi/constants";
-import transferAVAX from "@/server-actions/sell/transfer_avax";
+// import { useAccountId, useWallet } from "@buidlerlabs/hashgraph-react-wallets";
+import { useWallet } from "@meshsdk/react";
+import { PortfolioPerformance } from "./components/portfolio-performance";
+import { AssetHoldings } from "./components/asset-holdings";
+import { StockHoldings } from "./components/types";
 
-interface StockHoldings {
-  tokenId: string;
-  symbol: string;
-  name: string;
-  shares: number;
-  buy_price: number;
-  current_price: number;
-  profit: number;
-}
-
-interface PerformanceData {
-  date: Date;
-  value: number;
-  name?: string;
-}
-
-type DateRange = "1w" | "1m";
 const DashBoardPage = () => {
-  const { isConnected, address } = useAccount();
-  // const { data: connectorClient } = useConnectorClient(); // for signing
-  const { writeContractAsync } = useWriteContract({});
-  const [isSelling, setIsSelling] = useState(false);
+  const { connected } = useWallet();
+  const { address } = useWallet();
   const [portfolio, setPortfolio] = useState<StockHoldings[]>([]);
-  const [performanceData, setPerformanceData] = useState<PerformanceData[]>([]);
   const [totalInvested, setTotalInvested] = useState(0);
   const [currentValue, setCurrentValue] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedStock, setSelectedStock] = useState<StockHoldings | null>(
-    null,
-  );
-  const [sellQuantity, setSellQuantity] = useState(1);
-  const [paymentMethod, setPaymentMethod] = useState("mobile");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [dateRange, setDateRange] = useState<DateRange>("1w");
+  const [copied, setCopied] = useState(false);
 
-  const KES_TO_AVAX = 2560;
-  // const { signer } = useWallet();
-  // const { data: accountId } = useAccountId();
-
-  useEffect(() => {
-    // Only proceed if wallet is connected and we have an address
-    if (isConnected && address /*&& status === "connected"*/) {
-      const fetchData = async () => {
-        try {
-          setLoading(true);
-          setError(null);
-
-          const fromDate = getDateFromRange(dateRange);
-          let mode: GraphDataMode = GraphDataMode.WEEKLY;
-
-          // Adjust mode based on date range
-          if (dateRange === "1w" || dateRange === "1m") {
-            mode = GraphDataMode.WEEKLY;
-          } else {
-            mode = GraphDataMode.MONTHLY;
-          }
-
-          console.log("user address", address);
-          const [holdings, invested, portfolioValue, performance] =
-            await Promise.all([
-              getStockHoldings(address),
-              getInitialInvestment({ user_address: address }),
-              getTotalPortfolioValue(address),
-              getGraphData({
-                user_address: address,
-                from: fromDate,
-                to: new Date(),
-                mode: mode,
-              }),
-            ]);
-
-          setPortfolio(holdings);
-          setTotalInvested(invested);
-          setCurrentValue(portfolioValue);
-
-          setPerformanceData(
-            performance.map((item) => ({
-              ...item,
-              name: formatDateForDisplay(item.date, dateRange),
-            })),
-          );
-        } catch (err) {
-          console.error("Fetch error:", err);
-          setError("Failed to load portfolio data");
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      fetchData();
-    }
-  }, [isConnected, address, dateRange /*status, isInitialConnectionCheck*/]);
-
-  const getDateFromRange = (range: DateRange): Date => {
-    const date = new Date();
-    switch (range) {
-      case "1w":
-        date.setDate(date.getDate() - 7);
-        break;
-      case "1m":
-        date.setMonth(date.getMonth() - 1);
-        break;
-    }
-    return date;
-  };
-
-  const formatDateForDisplay = (date: Date, range: DateRange) => {
-    if (range === "1w" || range === "1m") {
-      return date.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      });
-    }
-  };
-
-  const totalProfit = currentValue - totalInvested;
-  const profitPercentage =
-    totalInvested !== 0 ? (totalProfit / totalInvested) * 100 : 0;
-
-  const handleSell = async () => {
-    if (!selectedStock || !address) {
-      toast.warning("No stock selected or wallet disconnected");
-      return;
-    }
-    setIsSelling(true);
-
+  const handleCopy = async () => {
+    if (!address) return;
+    
     try {
-      // Implement sell logic here
-      const currentPricePerShare =
-        selectedStock.current_price / selectedStock.shares;
-      const saleAmount = currentPricePerShare * sellQuantity;
-      const saleAmountAVAX = saleAmount / KES_TO_AVAX;
-      console.log("Sale amount =>", saleAmount)
-      await sellToken(
-        sellQuantity,
-        selectedStock.tokenId,
-        Math.ceil(currentPricePerShare)
-      );
-      // Send notification
-      if (paymentMethod === "mobile") {
-        console.log("Mobile payment selected");
-        await sendNotification({
-          customer_phone_number: phoneNumber,
-          amount: saleAmount,
-        });
-        console.log("Payment done");
-      } else {
-        console.log("Pay with crypto selected");
-        await transferAVAX({address, amount: saleAmountAVAX});
-        console.log("Pay with crypo done");
-      }
+      await navigator.clipboard.writeText(address);
+      setCopied(true);
+      toast.success("Address copied to clipboard!");
+      
+      // Reset after 2 seconds
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      toast.error("Failed to copy address");
+      console.error("Copy error:", err);
+    }
+  };
 
-      console.log("Beginning to update stock holdings");
-      await updateUserStockHoldings({
-        user_address: address,
-        stock_symbol: selectedStock.symbol,
-        stock_name: selectedStock.name,
-        number_stock: sellQuantity,
-        tokenId: selectedStock.tokenId,
-        operation: "sell",
-      });
-      console.log("Updated holdings");
-      toast.success(
-        `Sold ${sellQuantity} shares of ${selectedStock.symbol} for KSH ${saleAmount.toLocaleString(
-          "en-KE",
-          {
-            minimumFractionDigits: 2,
-          },
-        )}`,
-      );
+  const fetchPortfolioData = useCallback(async () => {
+    if (!address) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
 
-      // Refresh data
       const [holdings, invested, portfolioValue] = await Promise.all([
         getStockHoldings(address),
         getInitialInvestment({ user_address: address }),
@@ -240,47 +71,24 @@ const DashBoardPage = () => {
       setTotalInvested(invested);
       setCurrentValue(portfolioValue);
     } catch (err) {
-      toast.error("Failed to complete sale");
-      console.error("Sale error:", err);
+      console.error("Fetch error:", err);
+      setError("Failed to load portfolio data");
     } finally {
-      setIsSelling(false);
+      setLoading(false);
     }
-  };
-  const sellToken = async (
-    amount: number,
-    tokenId: string,
-    pricePerShare: number,
-  ) => {
-    // const object = {
-    //   tokenId: tokenId,
-    //   amount: amount,
-    // };
-    if (!isConnected) {
-      toast.error("Wallet not connected");
-      return;
-    }
-    if (!address) {
-      toast.error("Account ID not found");
-      return;
-    }
+  }, [address]);
 
-    try {
-      await writeContractAsync({
-        abi: CONTRACT_ABI,
-        address: CONTRACT_ADDRESS,
-        functionName: "sellShares",
-        // args: [BigInt(tokenId), BigInt(amount), parseEther(pricePerShare)],
-        args: [BigInt(tokenId), BigInt(amount), BigInt(pricePerShare)],
-      });
-
-      toast.success("Sell transaction submitted");
-    } catch (err) {
-      console.error("Error occured while selling tokens", err);
-      toast.error("Sell transaction failed");
+  useEffect(() => {
+    if (connected && address) {
+      fetchPortfolioData();
     }
-  };
+  }, [connected, address, fetchPortfolioData]);
 
-  if (!isConnected) {
+  const totalProfit = currentValue - totalInvested;
+  const profitPercentage =
+    totalInvested !== 0 ? (totalProfit / totalInvested) * 100 : 0;
+
+  if (!connected) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
         <Wallet className="h-12 w-12 mb-4 text-gray-400" />
@@ -311,7 +119,7 @@ const DashBoardPage = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] p-4">
         <div className="bg-red-50 p-4 rounded-lg max-w-md text-center">
-          g<h2 className="text-red-600 font-bold mb-2">Error Loading Data</h2>
+          <h2 className="text-red-600 font-bold mb-2">Error Loading Data</h2>
           <p className="text-red-500 mb-4">{error}</p>
           <Button variant="outline" onClick={() => window.location.reload()}>
             Try Again
@@ -327,17 +135,28 @@ const DashBoardPage = () => {
         <h1 className="text-2xl font-bold mt-6">Your Dashboard</h1>
         <div className="flex items-center gap-2">
           <Wallet className="h-5 w-5 text-gray-500" />
-          <span className="text-sm bg-gray-100 px-3 py-1 rounded-full">
-            {address
-              ? `${address.substring(0, 6)}...${address.substring(address.length - 4)}`
-              : "Disconnected"}
-          </span>
+          <div className="flex items-center gap-1 bg-gray-100 rounded-full group">
+                <span className="text-sm px-3 py-1">
+                  {address
+                    ? `${address.substring(0, 6)}...${address.substring(address.length - 4)}`
+                    : "Disconnected"}
+                </span>
+                {address && (
+                  <button
+                    onClick={handleCopy}
+                    disabled={copied}
+                    className="cursor-pointer p-1 rounded-full hover:bg-gray-200 transition-colors"
+                    aria-label={copied ? "Copied!" : "Copy address"}
+                  >
+                    {copied ? (
+                      <Check className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <Copy className="h-4 w-4 text-gray-500 group-hover:text-gray-700" />
+                    )}
+                  </button>
+                )}
+              </div>
         </div>
-        {/*
-        <Button variant="outline" onClick={() => sellToken()}>
-          Sell
-        </Button>
-      */}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -385,7 +204,7 @@ const DashBoardPage = () => {
               })}
             </div>
             <p className="text-xs text-muted-foreground">
-              From initial investment of KSH{" "}
+              From investment of KSH{" "}
               {totalInvested.toLocaleString("en-KE", {
                 minimumFractionDigits: 2,
               })}
@@ -408,238 +227,12 @@ const DashBoardPage = () => {
         </Card>
       </div>
 
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>Portfolio Performance</CardTitle>
-          <CardDescription>
-            Your portfolio value over time (KSH)
-          </CardDescription>
-          <div className="flex items-center gap-2">
-            <div className="flex gap-1">
-              {(["1w", "1m"] as DateRange[]).map((range) => (
-                <Button
-                  key={range}
-                  variant={dateRange === range ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setDateRange(range)}
-                >
-                  {range.toUpperCase()}
-                </Button>
-              ))}
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={performanceData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip
-                  formatter={(value) => [
-                    `KSH ${value.toLocaleString()}`,
-                    "Value",
-                  ]}
-                  labelFormatter={(label) => `Month: ${label}`}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="value"
-                  stroke="#8884d8"
-                  strokeWidth={2}
-                  dot={{ strokeWidth: 2 }}
-                  activeDot={{ r: 8 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
+      <PortfolioPerformance
+        userAddress={address}
+      />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Your Asset Holdings</CardTitle>
-          <CardDescription>
-            Manage your portfolio and sell assets when ready
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Symbol</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead className="text-right">Shares</TableHead>
-                <TableHead className="text-right">Avg Buy Price</TableHead>
-                <TableHead className="text-right">Current Price</TableHead>
-                <TableHead className="text-right">Profit/Loss</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {portfolio.map((stock) => {
-                if (stock.shares === 0) {
-                  return null;
-                }
-                const buyPricePerShare = stock.buy_price;
-                const currentPricePerShare = stock.current_price;
-                const profitPercent = stock.profit;
-
-                return (
-                  <TableRow key={stock.symbol}>
-                    <TableCell className="font-medium">
-                      {stock.symbol}
-                    </TableCell>
-                    <TableCell>{stock.name}</TableCell>
-                    <TableCell className="text-right">{stock.shares}</TableCell>
-                    <TableCell className="text-right">
-                      {buyPricePerShare.toLocaleString("en-KE", {
-                        minimumFractionDigits: 2,
-                      })}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {currentPricePerShare.toLocaleString("en-KE", {
-                        minimumFractionDigits: 2,
-                      })}
-                    </TableCell>
-                    <TableCell
-                      className={`text-right ${stock.profit >= 0 ? "text-green-600" : "text-red-600"}`}
-                    >
-                      {stock.profit >= 0 ? (
-                        <ArrowUp className="inline h-4 w-4 mr-1" />
-                      ) : (
-                        <ArrowDown className="inline h-4 w-4 mr-1" />
-                      )}
-                      {Math.abs(profitPercent).toFixed(2)}%
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedStock(stock);
-                              setSellQuantity(1);
-                            }}
-                          >
-                            Sell
-                          </Button>
-                        </DialogTrigger>
-                        {selectedStock?.symbol === stock.symbol && (
-                          <DialogContent className="sm:max-w-[425px]">
-                            <DialogHeader>
-                              <DialogTitle>
-                                Sell {selectedStock.symbol}
-                              </DialogTitle>
-                              <DialogDescription>
-                                {selectedStock.name} - Current Price: KSH{" "}
-                                {currentPricePerShare.toLocaleString("en-KE", {
-                                  minimumFractionDigits: 2,
-                                })}
-                              </DialogDescription>
-                            </DialogHeader>
-                            <div className="grid gap-4 py-4">
-                              <div className="grid gap-2">
-                                <label className="text-sm font-medium">
-                                  Quantity to Sell (Max: {selectedStock.shares})
-                                </label>
-                                <Input
-                                  type="number"
-                                  min="1"
-                                  max={selectedStock.shares}
-                                  value={sellQuantity}
-                                  onChange={(e) =>
-                                    setSellQuantity(
-                                      Math.min(
-                                        parseInt(e.target.value) || 1,
-                                        selectedStock.shares,
-                                      ),
-                                    )
-                                  }
-                                />
-                              </div>
-                              <div className="grid gap-2">
-                                <label className="text-sm font-medium">
-                                  Total Amount to Receive
-                                </label>
-                                <div className="text-xl font-bold">
-                                  KSH{" "}
-                                  {(
-                                    currentPricePerShare * sellQuantity
-                                  ).toLocaleString("en-KE", {
-                                    minimumFractionDigits: 2,
-                                  })}
-                                </div>
-                              </div>
-                              <div className="grid gap-2">
-                                <label className="text-sm font-medium">
-                                  Payment Method
-                                </label>
-                                <div className="flex space-x-2">
-                                  <Button
-                                    variant={
-                                      paymentMethod === "mobile"
-                                        ? "default"
-                                        : "outline"
-                                    }
-                                    onClick={() => setPaymentMethod("mobile")}
-                                    className="flex-1"
-                                  >
-                                    Mobile Money
-                                  </Button>
-                                  <Button
-                                    variant={
-                                      paymentMethod === "eth"
-                                        ? "default"
-                                        : "outline"
-                                    }
-                                    onClick={() => setPaymentMethod("eth")}
-                                    className="flex-1"
-                                  >
-                                    HBAR
-                                  </Button>
-                                </div>
-                              </div>
-                              {paymentMethod === "mobile" && (
-                                <div className="grid gap-2">
-                                  <label className="text-sm font-medium">
-                                    Phone Number
-                                  </label>
-                                  <Input
-                                    placeholder="+254..."
-                                    value={phoneNumber}
-                                    onChange={(e) =>
-                                      setPhoneNumber(e.target.value)
-                                    }
-                                  />
-                                </div>
-                              )}
-                            </div>
-                            <DialogFooter>
-                              <Button onClick={handleSell} disabled={isSelling}>
-                                {isSelling ? (
-                                  <div className="flex items-center gap-2">
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                    Processing...
-                                  </div>
-                                ) : (
-                                  "Confirm Sale"
-                                )}
-                              </Button>
-                            </DialogFooter>
-                          </DialogContent>
-                        )}
-                      </Dialog>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <AssetHoldings portfolio={portfolio} userAddress={address}
+        onUpdate={fetchPortfolioData} />
     </div>
   );
 };
