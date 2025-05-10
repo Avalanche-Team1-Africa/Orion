@@ -50,7 +50,6 @@ export const CustomCardanoWallet = () => {
     error: walletError,
     name: connectedWalletName,
     setWeb3Services,
-    setPersist,
   } = useWallet();
   const { isConnectionAllowed } = useWalletConnection();
   // detects available wallets
