@@ -49,7 +49,7 @@ export default async function RootLayout({
               </AppKitProvider>
             </CardanoProvider>
           </TanstackProvider>
-          <Toaster richColors />
+          <Toaster richColors closeButton expand visibleToasts={4} />
         </body>
       </html>
     </ClerkProvider>
