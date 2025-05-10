@@ -5,4 +5,5 @@ export interface StockData {
   price: number;
   tokenID: string
   change: number;
+  chain: string;
 }

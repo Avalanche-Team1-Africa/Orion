@@ -1,6 +1,7 @@
 "use server";
+
 import { Errors, MyError } from "@/constants/errors";
-import database from "@/db";
+import database, { GetStocksArgs } from "@/db";
 import axios from "axios";
 import { unstable_cache } from "next/cache";
 import * as cheerio from "cheerio";
@@ -47,6 +48,7 @@ export async function getStocks(): Promise<StockData[]> {
         price: entry?.price ?? 0.0,
         change: entry?.change ?? 0.0,
         tokenID: s.tokenID,
+        chain: s.chain
       };
     });
     // return stocks;
@@ -58,7 +60,7 @@ export async function getStocks(): Promise<StockData[]> {
 //Function to get stock by symbol. uses getstocks fun
 export async function getStockBySymbol(symbol: string): Promise<StockData | undefined> {
   const allStocks = await getStocks(); // Reuse existing logic
-  return allStocks.find((s) => s.symbol.toLowerCase() === symbol.toLowerCase());
+  return allStocks.find((a) => a.symbol === symbol);
 }
 
 
