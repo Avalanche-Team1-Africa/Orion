@@ -37,11 +37,11 @@ export async function getTotalPortfolioValue(
   }
 }
 
-interface StocksList {
-  num: number;
-  price: number;
-  symbol: string;
-}
+// interface StocksList {
+//   num: number;
+//   price: number;
+//   symbol: string;
+// }
 
 interface InitialInvestmentArgs {
   user_address: string;
@@ -58,92 +58,86 @@ export async function getInitialInvestment(
       args.user_address,
       PaymentStatus.PAID,
     );
-    const finalStockList: StocksList[] = [];
+    let totalInvestment = 0;
+    const sharesHeld: {[symbol: string]: number} = {};
+    const currentHoldings = await database.getStocksOwnedByUser(args.user_address);
+    
+    // Initialize sharesHeld with current holdings
+    if (currentHoldings) {
+      for (const stock of currentHoldings.stocks) {
+        sharesHeld[stock.symbol] = stock.number_stocks;
+      }
+    }
 
-    // Process each transaction
-    for (const trans of transactions) {
-      if (args.date) {
-        if (trans.purchase_date > args.date) {
-          break;
-        }
+    // Process transactions in reverse order (newest first)
+    for (let i = transactions.length - 1; i >= 0; i--) {
+      const trans = transactions[i];
+      
+      if (args.date && trans.purchase_date > args.date) {
+        continue;
       }
 
-      // If a buy transaction insert in final stock list
       if (trans.transaction_type === "buy") {
-        finalStockList.push({
-          num: trans.amount_shares,
-          price: trans.buy_price / trans.amount_shares,
-          symbol: trans.stock_symbol,
-        });
-      }
-
-      if (trans.transaction_type === "sell") {
-        // Remove stock from oldest stock list record
-        removeStock(
-          { num: trans.amount_shares, symbol: trans.stock_symbol },
-          finalStockList,
-        );
-      }
-    }
-
-    let initialInvestment = 0;
-    for (const stock of finalStockList) {
-      if (args.symbol) {
-        if (stock.symbol === args.symbol) {
-          initialInvestment += stock.num * stock.price;
+        // Only count this buy if we still hold some of these shares
+        const sharesStillHeld = sharesHeld[trans.stock_symbol] || 0;
+        const sharesToCount = Math.min(sharesStillHeld, trans.amount_shares);
+        
+        if (sharesToCount > 0) {
+          totalInvestment += sharesToCount * (trans.buy_price / trans.amount_shares);
+          sharesHeld[trans.stock_symbol] = sharesStillHeld - sharesToCount;
         }
-      } else {
-        initialInvestment += stock.num * stock.price;
+      } else if (trans.transaction_type === "sell") {
+        // For sells, add back the shares (since we're processing in reverse)
+        sharesHeld[trans.stock_symbol] = (sharesHeld[trans.stock_symbol] || 0) + trans.amount_shares;
       }
     }
 
-    return initialInvestment;
+    return totalInvestment;
   } catch (err) {
     console.log("Error getting initial investment", err);
     if (err instanceof MyError) {
       throw err;
     }
-
     throw new MyError(Errors.UNKNOWN);
   }
 }
 
-function removeStock(
-  args: { num: number; symbol: string },
-  stocks: StocksList[],
-) {
-  try {
-    if (stocks.length <= 0) {
-      throw new MyError(Errors.MUST_STOCKS_SELL);
-    }
+// function removeStock(
+//   args: { num: number; symbol: string },
+//   stocks: StocksList[],
+// ) {
+//   try {
+//     if (stocks.length <= 0) {
+//       throw new MyError(Errors.MUST_STOCKS_SELL);
+//     }
 
-    while (args.num > 0) {
-      if (stocks.length < 1) {
-        throw new MyError(Errors.TOO_MANY_SELL);
-      }
-      const oldest = stocks.find((f) => f.symbol === args.symbol);
+//     while (args.num > 0) {
+//       if (stocks.length < 1) {
+//         throw new MyError(Errors.TOO_MANY_SELL);
+//       }
+//       const oldest = stocks.find((f) => f.symbol === args.symbol);
 
-      if (oldest) {
-        const oldestIndex = stocks.indexOf(oldest);
-        if (oldest.num > args.num) {
-          oldest.num = oldest.num - args.num;
-          break;
-        } else if (oldest.num === args.num) {
-          stocks.splice(oldestIndex, 1);
-          break;
-        } else {
-          args.num = args.num - oldest.num;
-          stocks.splice(oldestIndex, 1);
-        }
-      } else {
-        throw new MyError(Errors.TOO_MANY_SELL);
-      }
-    }
-  } catch (err) {
-    console.log("Error removing items", err);
-    throw err;
-  }
-}
+//       if (oldest) {
+//         const oldestIndex = stocks.indexOf(oldest);
+//         if (oldest.num > args.num) {
+//           oldest.num = oldest.num - args.num;
+//           break;
+//         } else if (oldest.num === args.num) {
+//           stocks.splice(oldestIndex, 1);
+//           break;
+//         } else {
+//           args.num = args.num - oldest.num;
+//           stocks.splice(oldestIndex, 1);
+//         }
+//       } else {
+//         throw new MyError(Errors.TOO_MANY_SELL);
+//       }
+//     }
+//   } catch (err) {
+//     console.log("Error removing items", err);
+//     throw err;
+//   }
+// }
 
 interface StockHoldings {
   tokenId: string;
@@ -160,54 +154,59 @@ export async function getStockHoldings(
   user_address: string,
 ): Promise<StockHoldings[]> {
   try {
-    // Get amount of stocks owned by user
     const stockHoldings: StockHoldings[] = [];
     const ownedStocks = await database.getStocksOwnedByUser(user_address);
     const stockPrices = await getStockPrices();
+    const transactions = await database.getStockPurchases(user_address, PaymentStatus.PAID);
 
     if (ownedStocks) {
-      // For each stock get buy price and current price
       for (const stock of ownedStocks.stocks) {
-        // Getting current price
         const price = stockPrices.find((f) => f.symbol === stock.symbol);
         if (price === undefined) {
           throw new MyError(Errors.NOT_GET_STOCK_PRICES);
         }
-        const currentprice = price.price;
+        const currentPrice = price.price;
 
-        // Getting buy price
-        const buyingPrice = await getInitialInvestment({
-          user_address,
-          symbol: stock.symbol,
-        });
+        // Get all buy transactions for this stock, sorted by date (newest first)
+        const buyTransactions = transactions
+          .filter(t => t.stock_symbol === stock.symbol && t.transaction_type === "buy")
+          .sort((a, b) => b.purchase_date.getTime() - a.purchase_date.getTime());
 
-        // Getting profit
-        // const profit = (buyingPrice / stock.number_stocks - currentprice) / buyingPrice * 100;
-        const profit = (currentprice - (buyingPrice / stock.number_stocks)) / (buyingPrice / stock.number_stocks) * 100
+        // Use the most recent purchase price as the buy price
+        const latestPurchase = buyTransactions[0];
+        const buyPricePerShare = latestPurchase 
+          ? latestPurchase.buy_price / latestPurchase.amount_shares 
+          : 0;
+
+        // Calculate total invested (using actual purchase prices)
+        const totalInvested = buyPricePerShare * stock.number_stocks;
+
+        // Calculate profit/loss
+        const profit = buyPricePerShare > 0 
+          ? ((currentPrice - buyPricePerShare) / buyPricePerShare) * 100 
+          : 0;
+
         if (stock.number_stocks > 0) {
           stockHoldings.push({
             tokenId: stock.tokenId,
             shares: stock.number_stocks,
             symbol: stock.symbol,
-            buy_price_perShare: buyingPrice / stock.number_stocks,
+            buy_price_perShare: buyPricePerShare, // Actual purchase price
             name: stock.name,
-            current_price: currentprice,
-            total_value_bought: buyingPrice,
+            current_price: currentPrice,
+            total_value_bought: totalInvested,
             profit,
           });
         }
       }
-
       return stockHoldings;
-    } else {
-      return [];
     }
+    return [];
   } catch (err) {
     console.log("Error getting stock holdings", err);
     if (err instanceof MyError) {
       throw err;
     }
-
     throw new MyError(Errors.UNKNOWN);
   }
 }
