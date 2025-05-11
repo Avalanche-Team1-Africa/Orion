@@ -2,7 +2,7 @@ import { loadLucid } from "./serializer";
 import { sendTokenSchema } from "@/types/token";
 class Transact {
     static SEED = process.env.MINTER_SEED;
-    static BLOCKFROST_APIKEY = process.env.BLOCKFROST_APIKEY;
+    static BLOCKFROST_APIKEY = process.env.NEXT_PUBLIC_BLOCKFROST_PROJECT_ID_PREPROD;
 
     static async initialize() {
         if (!Transact.SEED || !Transact.BLOCKFROST_APIKEY) {

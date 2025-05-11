@@ -9,7 +9,7 @@ import invariant from "tiny-invariant";
 import "dotenv/config";
 
 const MINTER_SEED = process.env.MINTER_SEED!;
-const BLOCKFROST_APIKEY = process.env.BLOCKFROST_APIKEY!;
+const BLOCKFROST_APIKEY = process.env.NEXT_PUBLIC_BLOCKFROST_PROJECT_ID_PREPROD!;
 const OWNER_KEY = process.env.OWNER_KEY!;
 
 if (!MINTER_SEED || !BLOCKFROST_APIKEY || !OWNER_KEY) {
