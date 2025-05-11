@@ -26,7 +26,7 @@ import { store_stock_purchase } from "@/server-actions/buy/stock_holdings";
 import { usePaystack } from "@/hooks/use-paystack";
 import { makePaymentRequest } from "@/server-actions/paystack/makePaymentRequest";
 import { Errors } from "@/constants/errors";
-import {sendTokensToUser, sendTokensToUserCardano} from "@/server-actions/contracts/send_token_user";
+import {sendTokensToUserAvalanche, sendTokensToUserCardano} from "@/server-actions/contracts/send_token_user";
 import updateUserStockHoldings from "@/server-actions/stocks/update_stock_holdings";
 import { useEffect } from "react";
 import { useWalletConnection } from "@/context/wallet-connection-manager";
@@ -171,7 +171,7 @@ export function BuyStocksForm({
             if (activeWallet === "avalanche") {
 
               // Send tokens to user
-              await sendTokensToUser({
+              await sendTokensToUserAvalanche({
                 tokenId: entry.tokenID,
                 amount: quantity,
                 userWalletAddress: user_wallet,

@@ -1,7 +1,7 @@
 "use server";
 
 import { Errors, MyError } from "@/constants/errors";
-import database, { GetStocksArgs } from "@/db";
+import database from "@/db";
 import axios from "axios";
 import { unstable_cache } from "next/cache";
 import * as cheerio from "cheerio";

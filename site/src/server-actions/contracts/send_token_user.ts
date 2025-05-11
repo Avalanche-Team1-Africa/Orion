@@ -5,7 +5,7 @@ import { Errors, MyError } from "@/constants/errors";
 import smartContract from "@/contract";
 import { BuyTokenArgs } from "@/types/stocks";
 
-export async function sendTokensToUser(args: BuyTokenArgs) {
+export async function sendTokensToUserAvalanche(args: BuyTokenArgs) {
     try {
         await smartContract.buyStockAvalanche(args);
     } catch(err) {
@@ -18,7 +18,7 @@ export async function sendTokensToUserCardano(args:  { tokenId: string, amount: 
     try {
         await transact.sendToken(args);
     } catch(err) {
-        console.error("Error sending tokens");
+        console.error("Error sending tokens", err);
         throw new MyError("Could not send tokens to user");
     }
 }

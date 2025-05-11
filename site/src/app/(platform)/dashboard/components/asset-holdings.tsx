@@ -31,7 +31,6 @@ import { ArrowUp, ArrowDown, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 // import { useAccountId, useWallet } from "@buidlerlabs/hashgraph-react-wallets";
 import { useWallet } from "@meshsdk/react";
-import { transferHbar } from "@/server-actions/contracts/transfer_hbar";
 import { transferADA } from "@/server-actions/sell/transfer_ada";
 import updateUserStockHoldings from "@/server-actions/stocks/update_stock_holdings";
 import { sendNotification } from "@/server-actions/sell/notify";
