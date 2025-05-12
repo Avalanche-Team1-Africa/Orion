@@ -38,27 +38,6 @@ export default function LandingPage() {
       className: "text-primary",
     },
   ];
-
-  // Animation variants
-  // const container = {
-  //   hidden: { opacity: 0 },
-  //   show: {
-  //     opacity: 1,
-  //     transition: {
-  //       staggerChildren: 0.1,
-  //       delayChildren: 0.3,
-  //     },
-  //   },
-  // };
-  // const item = {
-  //   hidden: { y: 20, opacity: 0 },
-  //   show: { y: 0, opacity: 1 },
-  // };
-  //
-  // const fadeIn = {
-  //   hidden: { opacity: 0, y: 20 },
-  //   visible: { opacity: 1, y: 0, transition: { duration: 0.6 } },
-  // };
   return (
     <div className="relative  grid justify-items-center ">
       <section className="pt-32 px-8  w-full relative pb-12 md:pt-56 lg:min-h-screen md:pb-20">
@@ -74,9 +53,9 @@ export default function LandingPage() {
               cursorClassName="bg-primary my-auto"
             />
             <p className="text-lg mx-auto  md:text-xl lg:text-2xl text-muted-foreground md:max-w-5xl  text-left md:text-center ">
-              Connect your Orion wallet and start investing in stocks using ETH
-              or mobile money. Track your portfolio and sell when you&apos;re
-              ready.
+              Connect your Orion wallet and start investing in stocks using
+              crypto or mobile money. Track your portfolio and sell when
+              you&apos;re ready.
             </p>
             <div className="md:flex gap-4  justify-center items-center grid">
               <Button
