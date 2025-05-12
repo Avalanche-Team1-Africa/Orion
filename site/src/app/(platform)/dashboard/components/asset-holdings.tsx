@@ -301,7 +301,7 @@ export const AssetHoldings = ({ portfolio,
                                   onClick={() => setPaymentMethod("eth")}
                                   className="flex-1"
                                 >
-                                  HBAR
+                                  {isCardanoConnected ? "ADA" : "AVAX"}
                                 </Button>
                               </div>
                             </div>
